@@ -219,7 +219,7 @@ register. If the register is specified as a number (e.g., $5), then the $ is str
 by the equivalent register number). If an illegal register name is detected (e.g., $y5)
 or the register number is out of bounds (e.g., $987), an error is reported and the
 simulator halts*/
-char* getRegNum(char* reg){
+char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
     char* ret;//return string
     char* substr;//first char after $
     strncpy(substr, reg + 1, 1);
@@ -230,11 +230,11 @@ char* getRegNum(char* reg){
         isCharReg=true;
         strncpy(substr2, reg + 2, 1);
     }
-    if (!isCharReg) {
+    if (!isCharReg) {//if it already is in number form, return it as is
         strncpy(ret, reg + 1, strlen(reg) - 1);
         return ret;
     }
-    else{
+    else{//otherwise, we must take the number equivalent of the register
         if((!strcmp(substr,"Z")))
             return "0";
         else if((!strcmp(substr,"a"))){
