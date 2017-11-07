@@ -166,9 +166,11 @@ long pgm_c = 0;//program counter
 //Array of registers
 struct Register registers[REG_NUM];
 //Instruction memory
-struct Instruction instructionMem[MEM_SIZE];
+struct Commands iM[MEM_SIZE];
 //Data memory
-int dataMem[MEM_SIZE];
+int dM[MEM_SIZE];
+int legalCommand(struct Command command){
+}
 char *progScanner(...){} /*This reads as input a pointer to a string holding the next
 line from the assembly language program, using the fgets() library function to do
 so. progScanner() removes all duplicate spaces, parentheses, and commas from
@@ -182,7 +184,28 @@ In this simulator, we will assume that consecutive commas with nothing in betwee
 (e.g., ,,) are a typo for a single comma, and not flag them as an error; such
 consecutive commas will be treated as a single comma.*/
 
-char *regNumberConverter(...){} /* This function accepts as input the output of
+char *regNumberConverter(char* input){
+    char* token[6];
+    char* ret="";
+    char* substr;
+    token[0]=strtok(input," ");
+    int i=0;
+    while(token[i]!=NULL){//fills token array with the words in the line
+        token[i++]=strtok(NULL," ");
+    }
+    for(int j=0;j<i;j++){
+        strncpy(substr,token[i],1);//stores the first char of the token in substr
+        if(!strcmp(substr,"$")){
+            strcat(" ",ret);
+            strcat(getRegNum(token[i]),ret);
+        }
+        else{
+            strcat(" ",ret);
+            strcat(token[i],ret);
+        }
+    }
+    return ret;
+} /* This function accepts as input the output of
 the progScanner() function and returns a pointer to a character string in which all
 register names are converted to numbers.
 MIPS assembly allows you to specify either the name or the number of a register.
@@ -196,7 +219,96 @@ register. If the register is specified as a number (e.g., $5), then the $ is str
 by the equivalent register number). If an illegal register name is detected (e.g., $y5)
 or the register number is out of bounds (e.g., $987), an error is reported and the
 simulator halts*/
-
+char* getRegNum(char* reg){
+    char* ret;//return string
+    char* substr;//first char after $
+    strncpy(substr, reg + 1, 1);
+    char* substr2;//second char after $
+    int regNum=0;
+    bool isCharReg=false;//register starts off with a letter
+    if ((!strcmp(substr,"Z")) || (!strcmp(substr,"a")) || (!strcmp(substr,"v")) || (!strcmp(substr,"t")) || (!strcmp(substr,"s")) || (!strcmp(substr,"k")) || (!strcmp(substr,"g")) || (!strcmp(substr,"f")) || (!strcmp(substr,"r"))){
+        isCharReg=true;
+        strncpy(substr2, reg + 2, 1);
+    }
+    if (!isCharReg) {
+        strncpy(ret, reg + 1, strlen(reg) - 1);
+        return ret;
+    }
+    else{
+        if((!strcmp(substr,"Z")))
+            return "0";
+        else if((!strcmp(substr,"a"))){
+            if((!strcmp(substr2,"0")))
+                return "4";
+            else if((!strcmp(substr2,"3")))
+                return "7";
+            else if((!strcmp(substr2,"1")))
+                return "5";
+            else if((!strcmp(substr2,"2")))
+                return "6";
+            else
+                return "1";
+        }
+        else if((!strcmp(substr,"v"))){
+            if((!strcmp(substr2,"0")))
+                return "2";
+            else
+                return "3";
+        }
+        else if((!strcmp(substr,"t"))){
+            if((!strcmp(substr2,"0")))
+                return "8";
+            else if((!strcmp(substr2,"7")))
+                return "15";
+            else if((!strcmp(substr2,"1")))
+                return "9";
+            else if((!strcmp(substr2,"2")))
+                return "10";
+            else if((!strcmp(substr2,"3")))
+                return "11";
+            else if((!strcmp(substr2,"4")))
+                return "12";
+            else if((!strcmp(substr2,"5")))
+                return "13";
+            else
+                return "14";
+        }
+        else if((!strcmp(substr,"s"))){
+            if((!strcmp(substr2,"0")))
+                return "16";
+            else if((!strcmp(substr2,"7")))
+                return "23";
+            else if((!strcmp(substr2,"1")))
+                return "17";
+            else if((!strcmp(substr2,"2")))
+                return "18";
+            else if((!strcmp(substr2,"3")))
+                return "19";
+            else if((!strcmp(substr2,"4")))
+                return "20";
+            else if((!strcmp(substr2,"5")))
+                return "21";
+            else if((!strcmp(substr2,"6")))
+                return "22";
+            else
+                return "29";//sp
+        }
+        else if((!strcmp(substr,"k"))){
+            if((!strcmp(substr2,"0")))
+                return "26";//k0
+            else
+                return "27";//k1
+        }
+        else if((!strcmp(substr,"g")))
+            return "28";//gp
+        else if((!strcmp(substr,"f")))
+            return "30";//fp
+        else if((!strcmp(substr,"r")))
+            return "31";//ra
+        else
+            return "*";//if we get *s then we know something isnt right
+    }
+}
 
 struct inst parser(...){} /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
