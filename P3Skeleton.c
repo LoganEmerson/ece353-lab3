@@ -150,13 +150,16 @@ main (int argc, char *argv[]) {
 /////ABOVE IS TA CODE///////
 /////BELOW IS OUR CODE//////
 ////////////////////////////
+typedef enum {
+    add, sub, addi, mul, lw, sw, beq, haltSimulation
+} Opcode;
 
 struct Inst {
-    char* opcode;
+    Opcode opcode;
     int rs;
     int rt;
     int rd;
-    int immediate;
+    int imm;
 };
 
 struct Register {
@@ -170,7 +173,7 @@ struct IFLatchID {
 };
 
 struct IDLatchEX {
-    char* opcode;
+    Opcode opcode;
     int reg1; //reg value
     int reg2; //reg value
     int regResult;
@@ -180,7 +183,7 @@ struct IDLatchEX {
 };
 
 struct EXLatchM {
-    char* opcode;
+    Opcode opcode;
     int reg2;
     int regResult;
     int result;
@@ -189,7 +192,7 @@ struct EXLatchM {
 };
 
 struct MLatchWB {
-    char* opcode;
+    Opcode opcode;
     int regResult;
     int result;
 };
@@ -339,7 +342,86 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
     }
 }
 
-struct inst parser(char* input){} /* This function uses the output of regNumberConverter().
+struct inst parser(char* input){
+    char* token[6];
+    token[0]=strtok(input," ");
+    int i=0;
+    while(token[i]!=NULL){//fills token array with the words in the line
+        token[i++]=strtok(NULL," ");
+    }
+    /*struct Inst {
+        char* opcode;
+        int rs;
+        int rt;
+        int rd;
+        int immediate;
+    };*/
+    struct Inst retVal;
+    if (strcmp(token[0], "haltSimulation") == 0) {
+        retVal->opcode = haltSimulation;
+        retVal->rs = 0;
+        retVal->rt = 0;
+        retVal->rd = 0;
+        retVal->imm = 0;
+    }
+    else if (strcmp(token[0], "add") == 0) {
+        retVal->opcode = add;
+        retVal->rs = regNumberConverter(token[2]);
+        retVal->rt = regNumberConverter(token[3]);
+        retVal->rd = regNumberConverter(token[1]);
+        retVal->imm = 0;
+    }
+    else if (strcmp(token[0], "sub") == 0) {
+        retVal->opcode = sub;
+        retVal->rs = regNumberConverter(token[2]);
+        retVal->rt = regNumberConverter(token[3]);
+        retVal->rd = regNumberConverter(token[1]);
+        retVal->imm = 0;
+    }
+    else if (strcmp(token[0], "addi") == 0) {
+        retVal->opcode = addi;
+        retVal->rs = regNumberConverter(token[2]);
+        retVal->rt = regNumberConverter(token[1]);
+        retVal->rd = 0;
+        retVal->imm = atoi(tokens[3]);
+    }
+    else if (strcmp(token[0], "mul") == 0) {
+        retVal->opcode = mul;
+        retVal->rs = regNumberConverter(token[2]);
+        retVal->rt = regNumberConverter(token[3]);
+        retVal->rd = regNumberConverter(token[1]);
+        retVal->imm = 0;
+    }
+    else if (strcmp(token[0], "lw") == 0) {
+        retVal->opcode = lw;
+        retVal->rs = regNumberConverter(token[3]);
+        retVal->rt = regNumberConverter(token[1]);
+        retVal->rd = 0;
+        retVal->imm = atoi(tokens[2]);
+    }
+    else if (strcmp(token[0], "sw") == 0) {
+        retVal->opcode = sw;
+        retVal->rs = regNumberConverter(token[3]);
+        retVal->rt = regNumberConverter(token[1]);
+        retVal->rd = 0;
+        retVal->imm = atoi(tokens[2]);
+    }
+    else if (strcmp(token[0], "beq") == 0) {
+        retVal->opcode = beq;
+        retVal->rs = regNumberConverter(token[1]);
+        retVal->rt = regNumberConverter(token[2]);
+        retVal->rd = 0;
+        retVal->imm = atoi(token[3]);
+    }
+    else {
+        retVal->opcode = -1;
+        retVal->rs = -1;
+        retVal->rt = -1;
+        retVal->rd = -1;
+        retVal->imm = -1;
+    }
+
+} /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -349,7 +431,7 @@ the enumeration type to conveniently describe the opcodes, e.g., enum inst
 {ADD,ADDI,SUB,MULT,BEQ,LW,SW}. You can assume that the assembly language
 instr*/
 
-void IF(...){}
+void IF(struct IFLatchID *res){}
 void ID(...){}
 void EX(..){}
 void MEM(...){}
