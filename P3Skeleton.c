@@ -1,4 +1,4 @@
-// Author: Shikang Xu; ECE 353 TA
+// Author: Shikang Xu; ECE 353 T
 
 // List the full names of ALL group members at the top of your code.
 #include <stdio.h>
