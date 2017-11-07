@@ -103,7 +103,7 @@ main (int argc, char *argv[]) {
 
 			}
 	}
-}
+
 
 
 
@@ -151,7 +151,7 @@ main (int argc, char *argv[]) {
 /////BELOW IS OUR CODE//////
 ////////////////////////////
 
-struct Command {
+struct Inst {
     char* opcode;
     int rs;
     int rt;
@@ -164,12 +164,12 @@ struct Register {
     bool flag; // if flag == true, the register is safe
 };
 
-struct LatchA {
-    struct Command command;
+struct IFLatchID {
+    struct Inst inst;
 	int cycles;
 };
 
-struct LatchB {
+struct IDLatchEX {
     char* opcode;
     int reg1; //reg value
     int reg2; //reg value
@@ -179,7 +179,7 @@ struct LatchB {
     int cycles;
 };
 
-struct LatchC {
+struct EXLatchM {
     char* opcode;
     int reg2;
     int regResult;
@@ -188,7 +188,7 @@ struct LatchC {
     int cycles;
 };
 
-struct LatchD {
+struct MLatchWB {
     char* opcode;
     int regResult;
     int result;
@@ -197,11 +197,9 @@ long pgm_c = 0;//program counter
 //Array of registers
 struct Register registers[REG_NUM];
 //Instruction memory
-struct Commands iM[MEM_SIZE];
+struct Inst iM[MEM_SIZE];
 //Data memory
 int dM[MEM_SIZE];
-int legalCommand(struct Command command){
-}
 char *progScanner(...){} /*This reads as input a pointer to a string holding the next
 line from the assembly language program, using the fgets() library function to do
 so. progScanner() removes all duplicate spaces, parentheses, and commas from
@@ -341,7 +339,7 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
     }
 }
 
-struct inst parser(...){} /* This function uses the output of regNumberConverter().
+struct inst parser(char* input){} /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
