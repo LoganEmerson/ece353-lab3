@@ -162,6 +162,13 @@ struct LatchD {
     int regResult;
     int result;
 };
+long pgm_c = 0;//program counter
+//Array of registers
+struct Register registers[REG_NUM];
+//Instruction memory
+struct Instruction instructionMem[MEM_SIZE];
+//Data memory
+int dataMem[MEM_SIZE];
 char *progScanner(...){} /*This reads as input a pointer to a string holding the next
 line from the assembly language program, using the fgets() library function to do
 so. progScanner() removes all duplicate spaces, parentheses, and commas from
