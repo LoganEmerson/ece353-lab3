@@ -11,68 +11,99 @@
 #define BATCH 0
 #define REG_NUM 32
 #define MEMSIZE 2048
+#define WORDMAX 512
 
-main (int argc, char *argv[]){
-    int sim_mode=0;//mode flag, 1 for single-cycle, 0 for batch
-    int c,m,n;
-    int i;//for loop counter
-    long mips_reg[REG_NUM];
-    long pgm_c=0;//program counter
-    long sim_cycle=0;//simulation cycle counter
-    //define your own counter for the usage of each pipeline stage here
+main (int argc, char *argv[]) {
+	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
+	int c, m, n;
+	int i;//for loop counter
+	long mips_reg[REG_NUM];
+	long pgm_c = 0;//program counter, need assertion that PC < 512, max # of lines in IM
+	long sim_cycle = 0;//simulation cycle counter
+	//define your own counter for the usage of each pipeline stage here
 
-    int test_counter=0;
-    FILE *input=NULL;
-    FILE *output=NULL;
-    printf("The arguments are:");
+	int test_counter = 0;
+	FILE *input;
+	FILE *output;
+	printf("The arguments are:");
 
-    for(i=1;i<argc;i++){
-        printf("%s ",argv[i]);
-    }
-    printf("\n");
-    if(argc==7){
-        if(strcmp("-s",argv[1])==0){
-            sim_mode=SINGLE;
-        }
-        else if(strcmp("-b",argv[1])==0){
-            sim_mode=BATCH;
-        }
-        else{
-            printf("Wrong sim mode chosen\n");
-            exit(0);
-        }
+	for (i = 1; i < argc; i++) {
+		printf("%s ", argv[i]);
+	}
+	printf("\n");
+	if (argc == 7) {
+		if (strcmp("-s", argv[1]) == 0) {
+			sim_mode = SINGLE;
+		} else if (strcmp("-b", argv[1]) == 0) {
+			sim_mode = BATCH;
+		} else {
+			printf("Wrong sim mode chosen\n");
+			exit(0);
+		}
 
-        m=atoi(argv[2]);
-        n=atoi(argv[3]);
-        c=atoi(argv[4]);
-        input=fopen(argv[5],"r");
-        output=fopen(argv[6],"w");
+		m = atoi(argv[2]);
+		n = atoi(argv[3]);
+		c = atoi(argv[4]);
+		input = fopen(argv[5], "r");
+		output = fopen(argv[6], "w");
 
-    }
+	} else {
+		printf("Usage: ./sim-mips -s m n c input_name output_name (single-sysle mode)\n or \n ./sim-mips -b m n c input_name  output_name(batch mode)\n");
+		printf("m,n,c stand for number of cycles needed by multiplication, other operation, and memory access, respectively\n");
+		exit(0);
+	}
+	if (input == NULL) {
+		printf("Unable to open input or output file\n");
+		exit(0);
+	}
+	if (output == NULL) {
+		printf("Cannot create output file\n");
+		exit(0);
+	}
+	//initialize registers and program counter
+	if (sim_mode == 1) {
+		for (i = 0; i < REG_NUM; i++) {
+			mips_reg[i] = 0;
+		}
+	}
+	int linecount = 1;//number of lines
+	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
+	char line[100];//array of chars that will hold the string input from file
+	char out[100];//what is to be passed down to next function, output
+	while (fgets(line, 100, input)) {//keep getting lines from input file
 
-    else{
-        printf("Usage: ./sim-mips -s m n c input_name output_name (single-sysle mode)\n or \n ./sim-mips -b m n c input_name  output_name(batch mode)\n");
-        printf("m,n,c stand for number of cycles needed by multiplication, other operation, and memory access, respectively\n");
-        exit(0);
-    }
-    if(input==NULL){
-        printf("Unable to open input or output file\n");
-        exit(0);
-    }
-    if(output==NULL){
-        printf("Cannot create output file\n");
-        exit(0);
-    }
-    //initialize registers and program counter
-    if(sim_mode==1){
-        for (i=0;i<REG_NUM;i++){
-            mips_reg[i]=0;
-        }
-    }
+		int i;
+		int oc=0;//counter for out char array
+		int space=0; //for counting more than 1 consecutive space
+		int comma=0; //for counting more than 1 consecutive comma
+		//int leftp=0; //counter for # of left parentheses
+		int paren=0;//count for # of parentheses
 
-    //start your code from here
+		for(i=0;i<100;i++){//need to search through the array and parse it correctly
+			//we should only every encounter 1 set or parenthese
+			if(line[i]==0x28 || line[i]==0x29) {//when we encounter a parentheses, 28=(   29=)
+				if(line[i]==0x28) {paren++;}    //when we get leftp,
+				if(line[i]==0x29) {paren--;}   //when we get rightp
+				if(paren>=2 || paren<=-1) {//when we have more than two left parentheses, error
+					printf("Mismatched parentheses detected on line number %d: %s:",linecount, line);
+					fprintf(output, "Mismatched parentheses detected, ending program", linecount, line);
+				}
 
+			}
 
+			if(line[i]==0x20){//when it detects a space
+				if(space==0){
+					out[oc]=0x20;
+					oc++;//when we put something in output array, then increment
+				}//if not consecutive spaces, place the space in output
+				space++;//increment number of spaces
+			}
+
+			else if(line[i]==0x2C) {}//when we detect a comma, do nothing
+
+			}
+	}
+}
 
 
 
