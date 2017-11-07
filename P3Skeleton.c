@@ -132,7 +132,7 @@ struct LatchA {
 };
 
 struct LatchB {
-    Opcode opcode;
+    char* opcode;
     int reg1; //reg value
     int reg2; //reg value
     int regResult;
@@ -142,7 +142,7 @@ struct LatchB {
 };
 
 struct LatchC {
-    Opcode opcode;
+    char* opcode;
     int reg2;
     int regResult;
     int result;
@@ -151,7 +151,7 @@ struct LatchC {
 };
 
 struct LatchD {
-    Opcode opcode;
+    char* opcode;
     int regResult;
     int result;
 };
