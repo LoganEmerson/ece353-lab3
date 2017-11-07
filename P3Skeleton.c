@@ -112,6 +112,12 @@ main (int argc, char *argv[]){
     fclose(output);
     return 0;
 }
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+
 struct Command {
     char* opcode;
     int rs;
