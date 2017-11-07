@@ -10,6 +10,8 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
+#define MEMSIZE 2048
+
 main (int argc, char *argv[]){
     int sim_mode=0;//mode flag, 1 for single-cycle, 0 for batch
     int c,m,n;
@@ -133,8 +135,7 @@ struct Register {
 
 struct LatchA {
     struct Command command;
-
-    int cycles;
+	int cycles;
 };
 
 struct LatchB {
@@ -204,7 +205,7 @@ void IF(...){}
 void ID(...){}
 void EX(..){}
 void MEM(...){}
-voidWB(...){} /* These
+void WB(...){} /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
 and control hazards must be taken into account. Keep in mind that several operations
 are multicycle and that these stages are themselves not pipelined. For
