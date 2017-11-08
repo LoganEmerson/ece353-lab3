@@ -356,71 +356,77 @@ struct inst parser(char* input){
         int rd;
         int immediate;
     };*/
+    //IF LOGIC ERRORS,
     struct Inst retVal;
-    if (strcmp(token[0], "haltSimulation") == 0) {
-        retVal->opcode = haltSimulation;
-        retVal->rs = 0;
-        retVal->rt = 0;
-        retVal->rd = 0;
-        retVal->imm = 0;
+    if (!strcmp(token[0], "haltSimulation")) {
+        retVal->opcode=haltSimulation;
+        retVal->rs=0;
+        retVal->rt=0;
+        retVal->rd=0;
+        retVal->imm=0;
     }
-    else if (strcmp(token[0], "add") == 0) {
-        retVal->opcode = add;
-        retVal->rs = regNumberConverter(token[2]);
-        retVal->rt = regNumberConverter(token[3]);
-        retVal->rd = regNumberConverter(token[1]);
-        retVal->imm = 0;
+    else if (!strcmp(token[0], "add")) {
+        retVal->opcode=add;
+        retVal->rs=regNumberConverter(token[2]);
+        retVal->r= regNumberConverter(token[3]);
+        retVal->rd=regNumberConverter(token[1]);
+        retVal->imm=0;
     }
-    else if (strcmp(token[0], "sub") == 0) {
-        retVal->opcode = sub;
-        retVal->rs = regNumberConverter(token[2]);
-        retVal->rt = regNumberConverter(token[3]);
-        retVal->rd = regNumberConverter(token[1]);
-        retVal->imm = 0;
+    else if (!strcmp(token[0], "sub")) {
+        retVal->opcode=sub;
+        retVal->rs=regNumberConverter(token[2]);
+        retVal->rt=regNumberConverter(token[3]);
+        retVal->rd=regNumberConverter(token[1]);
+        retVal->imm=0;
     }
-    else if (strcmp(token[0], "addi") == 0) {
-        retVal->opcode = addi;
-        retVal->rs = regNumberConverter(token[2]);
-        retVal->rt = regNumberConverter(token[1]);
-        retVal->rd = 0;
-        retVal->imm = atoi(tokens[3]);
+    else if (!strcmp(token[0], "addi")) {
+        retVal->opcode=addi;
+        retVal->rs=regNumberConverter(token[2]);
+        retVal->rt=regNumberConverter(token[1]);
+        retVal->rd=0;
+        retVal->imm=atoi(tokens[3]);
     }
-    else if (strcmp(token[0], "mul") == 0) {
-        retVal->opcode = mul;
-        retVal->rs = regNumberConverter(token[2]);
-        retVal->rt = regNumberConverter(token[3]);
-        retVal->rd = regNumberConverter(token[1]);
-        retVal->imm = 0;
+    else if (!strcmp(token[0], "mul")) {
+        retVal->opcode=mul;
+        retVal->rs=regNumberConverter(token[2]);
+        retVal->rt=regNumberConverter(token[3]);
+        retVal->rd=regNumberConverter(token[1]);
+        retVal->imm=0;
     }
-    else if (strcmp(token[0], "lw") == 0) {
-        retVal->opcode = lw;
-        retVal->rs = regNumberConverter(token[3]);
-        retVal->rt = regNumberConverter(token[1]);
-        retVal->rd = 0;
-        retVal->imm = atoi(tokens[2]);
+    else if (!strcmp(token[0], "lw")) {
+        retVal->opcode=lw;
+        retVal->rs=regNumberConverter(token[3]);
+        retVal->rt=regNumberConverter(token[1]);
+        retVal->rd=0;
+        retVal->imm=atoi(tokens[2]);
     }
-    else if (strcmp(token[0], "sw") == 0) {
-        retVal->opcode = sw;
-        retVal->rs = regNumberConverter(token[3]);
-        retVal->rt = regNumberConverter(token[1]);
-        retVal->rd = 0;
-        retVal->imm = atoi(tokens[2]);
+    else if (!strcmp(token[0], "sw")) {
+        retVal->opcode=sw;
+        retVal->rs=regNumberConverter(token[3]);
+        retVal->rt=regNumberConverter(token[1]);
+        retVal->rd=0;
+        retVal->imm=atoi(tokens[2]);
     }
-    else if (strcmp(token[0], "beq") == 0) {
-        retVal->opcode = beq;
-        retVal->rs = regNumberConverter(token[1]);
-        retVal->rt = regNumberConverter(token[2]);
-        retVal->rd = 0;
-        retVal->imm = atoi(token[3]);
+    else if (!strcmp(token[0], "beq")) {
+        retVal->opcode=beq;
+        retVal->rs=regNumberConverter(token[1]);
+        retVal->rt=regNumberConverter(token[2]);
+        retVal->rd=0;
+        retVal->imm=atoi(token[3]);
     }
     else {
-        retVal->opcode = -1;
-        retVal->rs = -1;
-        retVal->rt = -1;
-        retVal->rd = -1;
-        retVal->imm = -1;
+        printf("Error On Line Containing %s : The opcode %s is illegal", input, token[0]);
+        exit(0);
     }
-
+    if(retVal.imm>0x0000ffff){
+        printf("Error On Line Containing %s : The immediate value %d is to large", input, retval.imm);
+        exit(0);
+    }
+    /*else if(){
+        printf("Error On Line Containing %s : The immediate value %d is to large", input, retval.imm);
+        exit(0);
+    }*/
+    return retVal;
 } /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
