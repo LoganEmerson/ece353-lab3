@@ -72,7 +72,7 @@ main (int argc, char *argv[]) {
 	while (fgets(line, 100, input)) {//keep getting lines from input file
 
 
-	}
+    }
 
 			}
 
