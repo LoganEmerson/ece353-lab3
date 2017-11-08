@@ -69,25 +69,10 @@ main (int argc, char *argv[]) {
 	int linecount = 1;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
-	char out[100];//what is to be passed down to next function, output
 	while (fgets(line, 100, input)) {//keep getting lines from input file
 
-		int i;
-		int oc=0;//counter for out char array
-		int space=0; //for counting more than 1 consecutive space
-		int comma=0; //for counting more than 1 consecutive comma
-		//int leftp=0; //counter for # of left parentheses
-		int paren=0;//count for # of parentheses
 
-		for(i=0;i<100;i++){//need to search through the array and parse it correctly
-			//we should only every encounter 1 set or parenthese
-			if(line[i]==0x28 || line[i]==0x29) {//when we encounter a parentheses, 28=(   29=)
-				if(line[i]==0x28) {paren++;}    //when we get leftp,
-				if(line[i]==0x29) {paren--;}   //when we get rightp
-				if(paren>=2 || paren<=-1) {//when we have more than two left parentheses, error
-					printf("Mismatched parentheses detected on line number %d: %s:",linecount, line);
-					fprintf(output, "Mismatched parentheses detected, ending program", linecount, line);
-				}
+	}
 
 			}
 
@@ -204,6 +189,56 @@ struct Inst iM[MEM_SIZE];
 //Data memory
 int dM[MEM_SIZE];
 char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+int legalCommand(struct Command command){
+}
+
+
+
+char *progScanner(char input[]){
+    char out[100];//what is to be passed down to next function, output
+    int i;
+    int oc=0;//counter for out char array
+    int space=0; //for counting more than 1 consecutive space
+    int comma=0; //for counting more than 1 consecutive comma
+    //int leftp=0; //counter for # of left parentheses
+    int paren=0;//count for # of parentheses
+
+    for(i=0;i<100;i++){//need to search through the array and parse it correctly
+        //we should only ever encounter 1 set or parenthese
+        if(line[i]==0x28 || line[i]==0x29) {//when we encounter a parentheses, 28=(   29=)
+            if(line[i]==0x28) {
+                paren++;
+                output[oc]=0x20;//put a space
+                oc++;//increment oc
+            }    //when we get leftp,
+            if(line[i]==0x29) {paren--;}   //when we get rightp
+            if(paren>=2 || paren<=-1) {//when we have more than two left parentheses or start with right, error
+                printf("Mismatched parentheses detected on line number %d: %s:",linecount, line);
+                fprintf(output, "Mismatched parentheses detected, ending program", linecount, line);
+                exit(0);//since, error, exit the program
+            }
+        }
+
+        if(line[i]==0x20 || line[i]==0x2C){//when it detects a space or comma
+            if(output[oc-1]!=0x20){//if previous character in output is not a space
+                out[oc]=0x20;
+                oc++;//when we put something in output array, then increment
+            }//if not consecutive spaces, place the space in output
+            space++;//increment number of spaces
+        }
+
+        //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
+        else{
+            output[oc]=line[i];
+            oc++;
+        }
+
+    }
+
+
+
+
+} /*This reads as input a pointer to a string holding the next
 line from the assembly language program, using the fgets() library function to do
 so. progScanner() removes all duplicate spaces, parentheses, and commas from
 it from it and a pointer to the resulting character string will be returned. Items
@@ -437,7 +472,7 @@ the enumeration type to conveniently describe the opcodes, e.g., enum inst
 {ADD,ADDI,SUB,MULT,BEQ,LW,SW}. You can assume that the assembly language
 instr*/
 
-void IF(struct IFLatchID *res){}
+void IF(...){}
 void ID(...){}
 void EX(..){}
 void MEM(...){}
