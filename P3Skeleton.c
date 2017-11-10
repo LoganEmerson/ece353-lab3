@@ -74,7 +74,7 @@ main (int argc, char *argv[]) {
 
     }
 
-			}
+
 
 			if(line[i]==0x20){//when it detects a space
 				if(space==0){
@@ -86,8 +86,8 @@ main (int argc, char *argv[]) {
 
 			else if(line[i]==0x2C) {}//when we detect a comma, do nothing
 
-			}
-	}
+
+
 
 
 
@@ -474,7 +474,7 @@ instr*/
 
 void IF(...){}
 void ID(...){}
-void EX(..){}
+void EX(...){}
 void MEM(...){}
 void WB(...){} /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
