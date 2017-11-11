@@ -66,71 +66,64 @@ main (int argc, char *argv[]) {
 			mips_reg[i] = 0;
 		}
 	}
-	int linecount = 1;//number of lines
+	int linecount = 0;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
 	while (fgets(line, 100, input)) {//keep getting lines from input file
-       command = regNumberConverter(progScanner(line));
+        command = regNumberConverter(progScanner(line));
+        iM[linecount]= parser(command);//put the instruction into IM
+        linecount++;
+        assert(linecount<512);//we should not have more than 512 instructions in IM
+        }//at this point we have all of our finalized, parsed instructions in IM
+    int lc=0;//linecount for running through code
+    bool cont = true;//continue control for main loop
 
-
-    }
-
-
-
-			if(line[i]==0x20){//when it detects a space
-				if(space==0){
-					out[oc]=0x20;
-					oc++;//when we put something in output array, then increment
-				}//if not consecutive spaces, place the space in output
-				space++;//increment number of spaces
-			}
-
-			else if(line[i]==0x2C) {}//when we detect a comma, do nothing
+    while(cont) {
 
 
 
 
 
 
+        ///////////////////////////////////////////
 
-    ///////////////////////////////////////////
-
-    //output code 2: the following code will output the register
-    //value to screen at every cycle and wait for the ENTER key
-    //to be pressed; this will make it proceed to the next cycle
-    printf("cycle: %d ",sim_cycle);
-    if(sim_mode==1){
-        for (i=1;i<REG_NUM;i++){
-            printf("%d  ",mips_reg[i]);
+        //output code 2: the following code will output the register
+        //value to screen at every cycle and wait for the ENTER key
+        //to be pressed; this will make it proceed to the next cycle
+        printf("cycle: %d ", sim_cycle);
+        if (sim_mode == 1) {
+            for (i = 1; i < REG_NUM; i++) {
+                printf("%d  ", mips_reg[i]);
+            }
         }
-    }
-    printf("%d\n",pgm_c);
-    pgm_c+=4;
-    sim_cycle+=1;
-    test_counter++;
-    printf("press ENTER to continue\n");
-    while(getchar() != '\n');
+        printf("%d\n", pgm_c);
+        pgm_c += 4;
+        sim_cycle += 1;
+        test_counter++;
+        printf("press ENTER to continue\n");
+        while (getchar() != '\n');
 
-    ////////////////////////////////////////////
-    if(sim_mode==0){
-        fprintf(output,"program name: %s\n",argv[5]);
-        fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",
-                ifUtil, idUtil, exUtil, memUtil, wbUtil);
-        // add the (double) stage_counter/sim_cycle for each
-        // stage following sequence IF ID EX MEM WB
+        ////////////////////////////////////////////
+        if (sim_mode == 0) {
+            fprintf(output, "program name: %s\n", argv[5]);
+            fprintf(output, "stage utilization: %f  %f  %f  %f  %f \n",
+                    ifUtil, idUtil, exUtil, memUtil, wbUtil);
+            // add the (double) stage_counter/sim_cycle for each
+            // stage following sequence IF ID EX MEM WB
 
-        fprintf(output,"register values ");
-        for (i=1;i<REG_NUM;i++){
-            fprintf(output,"%d  ",mips_reg[i]);
+            fprintf(output, "register values ");
+            for (i = 1; i < REG_NUM; i++) {
+                fprintf(output, "%d  ", mips_reg[i]);
+            }
+            fprintf(output, "%d\n", pgm_c);
+
         }
-        fprintf(output,"%d\n",pgm_c);
-
+        //close input and output files at the end of the simulation
+        fclose(input);
+        fclose(output);
+        return 0;
     }
-    //close input and output files at the end of the simulation
-    fclose(input);
-    fclose(output);
-    return 0;
 }
 
 ////////////////////////////
@@ -161,9 +154,9 @@ struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
 
 struct IDLatchEX {//Latch between instruction decode and Execute
     Opcode opcode;
-    int reg1; //reg value
-    int reg2; //reg value
-    int regResult;
+    int reg1; //reg value, rs
+    int reg2; //reg value, rt
+    int regResult; // rd
     int immediate;
 
     int cycles;
@@ -404,7 +397,7 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
     }
 }
 
-struct inst parser(char* input){
+struct Inst parser(char* input){
     char* token[6];
     token[0]=strtok(input," ");
     int i=0;
