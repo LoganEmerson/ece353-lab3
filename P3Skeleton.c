@@ -543,7 +543,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
             outLatch->opcode = inLatch->inst.opcode;
             outLatch->reg1 = inLatch->inst.rs;
             outLatch->reg2 = inLatch->inst.rt;
-            outLatch->regResult = inLatch->inst.rt + inLatch->inst.imm;
+            outLatch->regResult = inLatch->inst.rs;
             outLatch->immediate = inLatch->inst.imm;
             outLatch->cycles = inLatch->cycles;
         default:
@@ -603,8 +603,8 @@ struct EXLatchM {//latch between Execute and Data Memory
         case lw:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
-            outLatch->regResult=inLatch->regResult;
-            outLatch->result=registers[inLatch->reg1].value;//puts value from reg 1 into result
+            outLatch->regResult=inLatch->regResult+inLatch->immediate;
+            outLatch->result=0;//puts value from reg 1 into result
             outLatch->cycles=inLatch->cycles;
         default:
             outLatch->opcode=inLatch->opcode;
@@ -644,7 +644,7 @@ struct MLatchWB {//Latch between memory and write back
         case lw:
             outLatch->opcode=inLatch->opcode;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=inLatch->result;
+            outLatch->result=registers[inLatch->regResult].value;
         default:
             outLatch->opcode=inLatch->opcode;
             outLatch->regResult=inLatch->regResult;
@@ -654,6 +654,7 @@ struct MLatchWB {//Latch between memory and write back
 }
 void WB(struct MLatchWB *inLatch){
     registers[inLatch->regResult].value=inLatch->result;
+    registers[inLatch->regResult].flag= true;
     return;
 } /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
