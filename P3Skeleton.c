@@ -557,32 +557,38 @@ struct EXLatchM {//latch between Execute and Data Memory
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value + registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case sub:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value - registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case mul:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value * registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case addi:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value+inLatch->immediate;//adds the immediate to reg 1 and puts in result
+            outLatch->cycles=inLatch->cycles;
         case lw:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=inLatch->immediate;//puts value from reg 1 into result
+            outLatch->cycles=inLatch->cycles;
         default:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=0;
+            outLatch->cycles=inLatch->cycles;
     }
 }
 void MEM(...){}
