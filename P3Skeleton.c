@@ -69,7 +69,9 @@ main (int argc, char *argv[]) {
 	int linecount = 1;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
+    char *command;//pointer to char string with the final command with registers converted to numbers
 	while (fgets(line, 100, input)) {//keep getting lines from input file
+       command = regNumberConverter(progScanner(line));
 
 
     }
@@ -152,12 +154,12 @@ struct Register {
     bool flag; // if flag == true, the register is safe
 };
 
-struct IFLatchID {
+struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
     struct Inst inst;
 	int cycles;
 };
 
-struct IDLatchEX {
+struct IDLatchEX {//Latch between instruction decode and Execute
     Opcode opcode;
     int reg1; //reg value
     int reg2; //reg value
@@ -167,7 +169,7 @@ struct IDLatchEX {
     int cycles;
 };
 
-struct EXLatchM {
+struct EXLatchM {//latch between Execute and Data Memory
     Opcode opcode;
     int reg2;
     int regResult;
@@ -176,103 +178,126 @@ struct EXLatchM {
     int cycles;
 };
 
-struct MLatchWB {
+struct MLatchWB {//Latch between memory and write back
     Opcode opcode;
     int regResult;
     int result;
 };
-long pgm_c = 0;//program counter
+long pc = 0;//program counter
+//assert( pc < 255 );
 //Array of registers
 struct Register registers[REG_NUM];
 //Instruction memory
 struct Inst iM[MEM_SIZE];
 //Data memory
 int dM[MEM_SIZE];
-char *progScanner(...){} /*This reads as input a pointer to a string holding the next
-int legalCommand(struct Command command){
-}
+//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+//int legalCommand(struct Command command){*/
 
 
 
-char *progScanner(char input[]){
+
+char *progScanner(char input[]) {
     char out[100];//what is to be passed down to next function, output
-    int i;
-    int oc=0;//counter for out char array
-    int space=0; //for counting more than 1 consecutive space
-    int comma=0; //for counting more than 1 consecutive comma
+    int i;//incrementer for loop below
+    int oc = 0;//counter for out char array
+    int space = 0; //for counting more than 1 consecutive space
+    int comma = 0; //for counting more than 1 consecutive comma
     //int leftp=0; //counter for # of left parentheses
-    int paren=0;//count for # of parentheses
+    int paren = 0;//count for # of parentheses
 
-    for(i=0;i<100;i++){//need to search through the array and parse it correctly
-        //we should only ever encounter 1 set or parenthese
-        if(line[i]==0x28 || line[i]==0x29) {//when we encounter a parentheses, 28=(   29=)
-            if(line[i]==0x28) {
+    for (i = 0; i < 100; i++) {//need to search through the array and parse it correctly
+        //we should only ever encounter 1 set of parentheses
+        if (line[i] == 0x28 || line[i] == 0x29) {//when we encounter a parentheses, 28=(   29=)
+            space = 0;//reset # of consecutive spaces
+            if (line[i] == 0x28) {//if we encounter a left parentheses
                 paren++;
-                output[oc]=0x20;//put a space
-                oc++;//increment oc
-            }    //when we get leftp,
-            if(line[i]==0x29) {paren--;}   //when we get rightp
-            if(paren>=2 || paren<=-1) {//when we have more than two left parentheses or start with right, error
-                printf("Mismatched parentheses detected on line number %d: %s:",linecount, line);
+                if (oc > 0) {//checking to see if previous character was a space, need oc to be >0
+                    if (out[oc - 1] != 0x20) {//checking to see if previous char was a space
+                        output[oc] = 0x20;//put a space if previous character was not a space
+                        oc++;//increment oc
+                    }//end check for space
+                }//end check for oc>0
+            }//end if statement for when we get leftp,
+
+            if (line[i] == 0x29) { paren--; }//when we encounter a right parentheses
+            if (paren >= 2 || paren <= -1) {//when we have more than two left parentheses or start with right, error
+                printf("Mismatched parentheses detected on line number %d: %s:", linecount, line);
                 fprintf(output, "Mismatched parentheses detected, ending program", linecount, line);
                 exit(0);//since, error, exit the program
-            }
-        }
+            }//end check for mismatched parentheses
+        }//end if statement for parentheses
 
-        if(line[i]==0x20 || line[i]==0x2C){//when it detects a space or comma
-            if(output[oc-1]!=0x20){//if previous character in output is not a space
-                out[oc]=0x20;
-                oc++;//when we put something in output array, then increment
+        if (line[i] == 0x20 || line[i] == 0x2C) {//when it detects a space or comma
+            if (line[i] == 0x20) { space++; }//if space, increment # of consecutive spaces
+            if (oc == 0) {//if first character is a space
+                if (line[i] == 0x2C) {//if first character is a comma, error, quit program
+                    printf("Typo detected on line number %d: %s:", linecount, line);
+                    fprintf(output, "Typo detected on line number %d: %s:", linecount, line);
+                    exit(0);//since, error, exit the program
+                }//do nothing, as output of progscanner should not have leading spaces
+            } else {//when oc, output counter != 0, then put a space
+                if (output[oc - 1] != 0x20) {//if previous character in output is not a space
+                    out[oc] = 0x20;
+                    oc++;//when we put something in output array, then increment
+                }
             }//if not consecutive spaces, place the space in output
             space++;//increment number of spaces
         }
+        if ((i - 1 - space) > 1) {//when checking for   , ,  need i to be greater than 2
+            if ((line[i] == 0x2C) & (line[i - space] == 0x20) & (line[i - 1 - space] == 0x2C)) {
+                printf("Syntax error detected: ', ,' %d: %s:", linecount, line);
+                fprintf(output, "Syntax error detected: ', ,' %d: %s:", linecount, line);
+                exit(0);//since, error, exit the program
+            }
+        }//end the if statement looking for , ,
 
-        //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
-        else{
-            output[oc]=line[i];
+            //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
+        else {//when we read anything but a comma, space, or parentheses
+            output[oc] = line[i];
             oc++;
+            paren = 0;//reset # of parentheses
+            space = 0;//reset # of consecutive spaces
         }
 
     }
+    char *outP = out;//transfers the character array out[] to a char pointer, outP
+    return outP;
+    /*This reads as input a pointer to a string holding the next
+   line from the assembly language program, using the fgets() library function to do
+   so. progScanner() removes all duplicate spaces, parentheses, and commas from
+   it from it and a pointer to the resulting character string will be returned. Items
+   will be separated in this character string solely by a single space. For example
+   add $s0, $s1, $s2 will be transformed to add $s0 $s1 $s2. The instruction
+   lw $s0, 8($t0) will be converted to lw $s0 8 $t0. If, in a load or store instruction,
+   mismatched parentheses are detected (e.g., 8($t0( instead of 8($t0) or a missing
+   or extra ), ), this should be reported and the simulation should then stop.
+   In this simulator, we will assume that consecutive commas with nothing in between
+   (e.g., ,,) are a typo for a single comma, and not flag them as an error; such
+   consecutive commas will be treated as a single comma.*/
+}
 
-
-
-
-} /*This reads as input a pointer to a string holding the next
-line from the assembly language program, using the fgets() library function to do
-so. progScanner() removes all duplicate spaces, parentheses, and commas from
-it from it and a pointer to the resulting character string will be returned. Items
-will be separated in this character string solely by a single space. For example
-add $s0, $s1, $s2 will be transformed to add $s0 $s1 $s2. The instruction
-lw $s0, 8($t0) will be converted to lw $s0 8 $t0. If, in a load or store instruction,
-mismatched parentheses are detected (e.g., 8($t0( instead of 8($t0) or a missing
-or extra ), ), this should be reported and the simulation should then stop.
-In this simulator, we will assume that consecutive commas with nothing in between
-(e.g., ,,) are a typo for a single comma, and not flag them as an error; such
-consecutive commas will be treated as a single comma.*/
-
-char *regNumberConverter(char* input){
-    char* token[6];
-    char* ret="";
-    char* substr;
-    token[0]=strtok(input," ");
-    int i=0;
-    while(token[i]!=NULL){//fills token array with the words in the line
-        token[i++]=strtok(NULL," ");
+char *regNumberConverter(char* input) {
+    char *token[6];
+    char *ret = "";
+    char *substr;
+    token[0] = strtok(input, " ");
+    int i = 0;
+    while (token[i] != NULL) {//fills token array with the words in the line
+        token[i++] = strtok(NULL, " ");
     }
-    for(int j=0;j<i;j++){
-        strncpy(substr,token[i],1);//stores the first char of the token in substr
-        if(!strcmp(substr,"$")){
-            strcat(" ",ret);
-            strcat(getRegNum(token[i]),ret);
-        }
-        else{
-            strcat(" ",ret);
-            strcat(token[i],ret);
+    for (int j = 0; j < i; j++) {
+        strncpy(substr, token[i], 1);//stores the first char of the token in substr
+        if (!strcmp(substr, "$")) {
+            strcat(" ", ret);
+            strcat(getRegNum(token[i]), ret);
+        } else {
+            strcat(" ", ret);
+            strcat(token[i], ret);
         }
     }
     return ret;
-} /* This function accepts as input the output of
+/* This function accepts as input the output of
 the progScanner() function and returns a pointer to a character string in which all
 register names are converted to numbers.
 MIPS assembly allows you to specify either the name or the number of a register.
@@ -286,6 +311,8 @@ register. If the register is specified as a number (e.g., $5), then the $ is str
 by the equivalent register number). If an illegal register name is detected (e.g., $y5)
 or the register number is out of bounds (e.g., $987), an error is reported and the
 simulator halts*/
+}
+
 char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
     char* ret;//return string
     char* substr;//first char after $
@@ -462,7 +489,7 @@ struct inst parser(char* input){
         exit(0);
     }*/
     return retVal;
-} /* This function uses the output of regNumberConverter().
+    /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -471,6 +498,7 @@ Each of the fields of the inst struct will be an integer. You should use
 the enumeration type to conveniently describe the opcodes, e.g., enum inst
 {ADD,ADDI,SUB,MULT,BEQ,LW,SW}. You can assume that the assembly language
 instr*/
+}
 
 void IF(...){}
 void ID(...){}
