@@ -6,12 +6,12 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-//feel free to add here any additional library names you may need
+//feel free to add here any additional library names you may nee
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
 #define MEMSIZE 2048
-#define WORDMAX 512
+#define WORDMAX 510
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
@@ -71,20 +71,9 @@ main (int argc, char *argv[]) {
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
 	while (fgets(line, 100, input)) {//keep getting lines from input file
-        command = regNumberConverter(progScanner(line));
-        iM[linecount]= parser(command);//put the instruction into IM
-        linecount++;
-        assert(linecount<512);//we should not have more than 512 instructions in IM
-        }//at this point we have all of our finalized, parsed instructions in IM
-    int lc=0;//linecount for running through code
-    bool cont = true;//continue control for main loop
-
-    while(cont) {
-
-
-
-
-
+       iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into IM
+        linecount++;//increment the linecounter for the IM
+    }//end the while statement that fills IM
 
         ///////////////////////////////////////////
 
@@ -520,12 +509,34 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
         int cycles;
     };
 */
-    outLatch->opcode = inLatch->inst.opcode;
-    outLatch->reg1 = inLatch->inst.rs;
-    outLatch->reg2 = inLatch->inst.rt;
-    outLatch->regResult = inLatch->inst.rd;
-    outLatch->immediate = inLatch->inst.imm;
-    outLatch->cycles = inLatch->cycles;
+    switch (inLatch->inst.opcode) {
+        case add:
+        case sub:
+        case mul:
+        case addi:
+            outLatch->opcode = inLatch->inst.opcode;
+            outLatch->reg1 = inLatch->inst.rs;
+            outLatch->reg2 = inLatch->inst.rt;
+            outLatch->regResult = inLatch->inst.rd;
+            outLatch->immediate = inLatch->inst.imm;
+            outLatch->cycles = inLatch->cycles;
+        case lw:
+            outLatch->opcode = inLatch->inst.opcode;
+            outLatch->reg1 = inLatch->inst.rs;
+            outLatch->reg2 = inLatch->inst.rt;
+            outLatch->regResult = inLatch->inst.rs;
+            outLatch->immediate = inLatch->inst.imm;
+            outLatch->cycles = inLatch->cycles;
+        default:
+            outLatch->opcode = 0;
+            outLatch->reg1 = 0;
+            outLatch->reg2 = 0;
+            outLatch->regResult = 0;
+            outLatch->immediate = 0;
+            outLatch->cycles = 0;
+    }
+    return;
+
 }
 void EX(struct IDLatchEX *inLatch,struct EXLatchM *outLatch){
     /*
@@ -550,36 +561,83 @@ struct EXLatchM {//latch between Execute and Data Memory
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value + registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case sub:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value - registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case mul:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value * registers[inLatch->reg2].value;
+            outLatch->cycles=inLatch->cycles;
         case addi:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=registers[inLatch->reg1].value+inLatch->immediate;//adds the immediate to reg 1 and puts in result
+            outLatch->cycles=inLatch->cycles;
         case lw:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
-            outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->regResult=inLatch->regResult+inLatch->immediate;
+            outLatch->result=0;//puts value from reg 1 into result
+            outLatch->cycles=inLatch->cycles;
         default:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
             outLatch->regResult=inLatch->regResult;
-            outLatch->result=;
+            outLatch->result=0;
+            outLatch->cycles=inLatch->cycles;
     }
+    return;
 }
-void MEM(...){}
-void WB(...){} /* These
+void MEM(struct EXLatchM *inLatch,struct MLatchWB *outLatch){
+    /*
+    struct EXLatchM {//latch between Execute and Data Memory
+    Opcode opcode;
+    int reg2;
+    int regResult;
+    int result;
+
+    int cycles;
+};
+
+struct MLatchWB {//Latch between memory and write back
+    Opcode opcode;
+    int regResult;
+    int result;
+};
+
+     */
+    switch (inLatch->inst.opcode) {
+        case add:
+        case sub:
+        case mul:
+        case addi:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=inLatch->result;
+        case lw:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=registers[inLatch->regResult].value;
+        default:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=inLatch->result;
+    }
+    return;
+}
+void WB(struct MLatchWB *inLatch){
+    registers[inLatch->regResult].value=inLatch->result;
+    registers[inLatch->regResult].flag= true;
+    return;
+} /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
 and control hazards must be taken into account. Keep in mind that several operations
 are multicycle and that these stages are themselves not pipelined. For
