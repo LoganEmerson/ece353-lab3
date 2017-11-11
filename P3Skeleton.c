@@ -6,7 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
-//feel free to add here any additional library names you may need
+//feel free to add here any additional library names you may nee
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
@@ -66,33 +66,14 @@ main (int argc, char *argv[]) {
 			mips_reg[i] = 0;
 		}
 	}
-	int linecount = 1;//number of lines
+	int linecount = 0;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
 	while (fgets(line, 100, input)) {//keep getting lines from input file
-       command = regNumberConverter(progScanner(line));
-
-
-    }
-
-
-
-			if(line[i]==0x20){//when it detects a space
-				if(space==0){
-					out[oc]=0x20;
-					oc++;//when we put something in output array, then increment
-				}//if not consecutive spaces, place the space in output
-				space++;//increment number of spaces
-			}
-
-			else if(line[i]==0x2C) {}//when we detect a comma, do nothing
-
-
-
-
-
-
+       iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into IM
+        linecount++;//increment the linecounter for the IM
+    }//end the while statement that fills IM
 
     ///////////////////////////////////////////
 
@@ -504,7 +485,6 @@ void IF(struct IFLatchID *inLatch, int cycles){
     struct Inst instruction=IM[pgm_c / 4];
     inLatch->inst=inst;
     inLatch->cycles=cycles;
-    return;
 }
 void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
     /*
