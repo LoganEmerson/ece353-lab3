@@ -183,7 +183,7 @@ struct MLatchWB {//Latch between memory and write back
     int regResult;
     int result;
 };
-long pc = 0;//program counter
+long pgm_c = 0;//program counter
 //assert( pc < 255 );
 //Array of registers
 struct Register registers[REG_NUM];
@@ -500,9 +500,60 @@ the enumeration type to conveniently describe the opcodes, e.g., enum inst
 instr*/
 }
 
-void IF(...){}
-void ID(...){}
-void EX(...){}
+void IF(struct IFLatchID *inLatch, int cycles){
+    struct Inst instruction=IM[pgm_c / 4];
+    inLatch->inst=inst;
+    inLatch->cycles=cycles;
+}
+void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
+    /*
+    struct Inst {
+    Opcode opcode;
+    int rs;
+    int rt;
+    int rd;
+    int imm;
+};
+     struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
+    struct Inst inst;
+	int cycles;
+};
+     struct IDLatchEX {//Latch between instruction decode and Execute
+        Opcode opcode;
+        int reg1; //reg value
+        int reg2; //reg value
+        int regResult;
+        int immediate;
+        int cycles;
+    };
+*/
+    outLatch->opcode = inLatch->inst.opcode;
+    outLatch->reg1 = inLatch->inst.rd;
+    outLatch->reg2 = inLatch->inst.rs;
+    outLatch->regResult = inLatch->inst.rt;
+    outLatch->immediate = inLatch->inst.imm;
+    outLatch->cycles = inLatch->cycles;
+}
+void EX(struct IDLatchEX *inLatch,struct EXLatchM *outLatch){
+    /*
+     struct IDLatchEX {//Latch between instruction decode and Execute
+    Opcode opcode;
+    int reg1; //reg value
+    int reg2; //reg value
+    int regResult;
+    int immediate;
+    int cycles;
+};
+struct EXLatchM {//latch between Execute and Data Memory
+    Opcode opcode;
+    int reg2;
+    int regResult;
+    int result;
+    int cycles;
+};
+     */
+
+}
 void MEM(...){}
 void WB(...){} /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
