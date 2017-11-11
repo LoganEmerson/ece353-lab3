@@ -431,6 +431,12 @@ the enumeration type to conveniently describe the opcodes, e.g., enum inst
 {ADD,ADDI,SUB,MULT,BEQ,LW,SW}. You can assume that the assembly language
 instr*/
 
+void IF(struct IFLatchID *Input){}
+void ID(struct IFLatchID *Input,struct IDLatchEX *Output){}
+void EX(struct IDLatchEX *Input,struct EXLatchM *Output,int n,int m){}
+void MEM(struct EXLatchM *Input,struct MLatchWB *Output, int c){}
+void WB(struct MLatchWB *Input){}
+/* These functions simulate activity in each of the five pipeline stages. All data, structural,
 void IF(struct IFLatchID *res){}
 void ID(...){}
 void EX(..){}
@@ -438,7 +444,7 @@ void MEM(...){}
 void WB(...){} /* These
 functions simulate activity in each of the five pipeline stages. All data, structural,
 and control hazards must be taken into account. Keep in mind that several operations
-are multicycle and that these stages are themselves not pipelined. For
+are multi-cycle and that these stages are themselves not pipelined. For
 example, if an add takes 4 cycles, the next instruction cannot enter EX until these
 cycles have elapsed. This, in turn, can cause IF to be blocked by ID. Branches will
 be resolved in the EX stage. We will cover in the lectures some some issues related
@@ -446,9 +452,3 @@ to realizing these functions.
 Keep in mind that the only requirement is that the simulator be cycle-by-cycle
 register-accurate. You don’t have to simulate the control signals. So, you can
 simply pass the instruction from one pipeline latch to the next.*/
-
-
-
-
-
-
