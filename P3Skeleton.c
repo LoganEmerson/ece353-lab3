@@ -11,7 +11,7 @@
 #define BATCH 0
 #define REG_NUM 32
 #define MEMSIZE 2048
-#define WORDMAX 512
+#define WORDMAX 510
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
