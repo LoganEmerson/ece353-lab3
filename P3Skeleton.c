@@ -427,7 +427,7 @@ struct inst parser(char* input){
         retVal->rs=regNumberConverter(token[2]);
         retVal->rt=regNumberConverter(token[1]);
         retVal->rd=0;
-        retVal->imm=atoi(tokens[3]);
+        retVal->imm=atoi(token[3]);
     }
     else if (!strcmp(token[0], "mul")) {
         retVal->opcode=mul;
@@ -441,14 +441,14 @@ struct inst parser(char* input){
         retVal->rs=regNumberConverter(token[3]);
         retVal->rt=regNumberConverter(token[1]);
         retVal->rd=0;
-        retVal->imm=atoi(tokens[2]);
+        retVal->imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "sw")) {
         retVal->opcode=sw;
         retVal->rs=regNumberConverter(token[3]);
         retVal->rt=regNumberConverter(token[1]);
         retVal->rd=0;
-        retVal->imm=atoi(tokens[2]);
+        retVal->imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "beq")) {
         retVal->opcode=beq;
@@ -462,7 +462,7 @@ struct inst parser(char* input){
         exit(0);
     }
     if(retVal.imm>0x0000ffff){
-        printf("Error On Line Containing %s : The immediate value %d is to large", input, retval.imm);
+        printf("Error On Line Containing %s : The immediate value %d is to large", input, retVal.imm);
         exit(0);
     }
     /*else if(){
