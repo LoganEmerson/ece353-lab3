@@ -528,9 +528,9 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
     };
 */
     outLatch->opcode = inLatch->inst.opcode;
-    outLatch->reg1 = inLatch->inst.rd;
-    outLatch->reg2 = inLatch->inst.rs;
-    outLatch->regResult = inLatch->inst.rt;
+    outLatch->reg1 = inLatch->inst.rs;
+    outLatch->reg2 = inLatch->inst.rt;
+    outLatch->regResult = inLatch->inst.rd;
     outLatch->immediate = inLatch->inst.imm;
     outLatch->cycles = inLatch->cycles;
 }
@@ -552,7 +552,38 @@ struct EXLatchM {//latch between Execute and Data Memory
     int cycles;
 };
      */
-
+    switch (inLatch->inst.opcode) {
+        case add:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+        case sub:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+        case mul:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+        case addi:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+        case lw:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+        default:
+            outLatch->opcode=inLatch->opcode;
+            outLatch->reg2=inLatch->reg2;
+            outLatch->regResult=inLatch->regResult;
+            outLatch->result=;
+    }
 }
 void MEM(...){}
 void WB(...){} /* These
