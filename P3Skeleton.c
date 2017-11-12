@@ -11,7 +11,7 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEMSIZE 2048
+#define MEM_SIZE 2048
 #define WORDMAX 510
 
 
@@ -304,10 +304,10 @@ simulator halts*/
 }
 
 char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
-    char* ret;//return string
-    char* substr;//first char after $
+    char* ret="";//return string
+    char* substr="";//first char after $
     strncpy(substr, reg + 1, 1);
-    char* substr2;//second char after $
+    char* substr2="";//second char after $
     int regNum=0;
     bool isCharReg=false;//register starts off with a letter
     if ((!strcmp(substr,"Z")) || (!strcmp(substr,"a")) || (!strcmp(substr,"v")) || (!strcmp(substr,"t")) || (!strcmp(substr,"s")) || (!strcmp(substr,"k")) || (!strcmp(substr,"g")) || (!strcmp(substr,"f")) || (!strcmp(substr,"r"))){
@@ -490,10 +490,23 @@ the enumeration type to conveniently describe the opcodes, e.g., enum inst
 instr*/
 }
 
-void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=IM[pgm_c / 4];
+void IF(struct IFLatchID *inLatch){//returns 0 if no waiting must be done
+    struct Inst instruction=iM[pgm_c / 4];
     inLatch->inst=instruction;
-    inLatch->cycles=cycles;
+    /*if (instruction.opcode== haltSimulation){
+        inLatch->inst=instruction;
+        return 1;
+    }
+    if (inLatch->cycles == 0) {
+        inLatch->cycles = cycles;
+    }
+    inLatch->cycles--;
+    if (inLatch->cycles == 0){ //doesnt pass fetch untill cycles have dropped to 0
+        inLatch->inst = instruction;
+        return 0;
+    } else {
+        return 1;
+    }*/
 }
 void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
     /*
@@ -517,7 +530,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
         int cycles;
     };
 */
-    switch (inLatch->inst.opcode) {
+   /* switch (inLatch->inst.opcode) {
         case add:
         case sub:
         case mul:
@@ -528,6 +541,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
             outLatch->regResult = inLatch->inst.rd;
             outLatch->immediate = inLatch->inst.imm;
             outLatch->cycles = inLatch->cycles;
+
         case lw:
             outLatch->opcode = inLatch->inst.opcode;
             outLatch->reg1 = inLatch->inst.rs;
@@ -535,16 +549,73 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
             outLatch->regResult = inLatch->inst.rs;
             outLatch->immediate = inLatch->inst.imm;
             outLatch->cycles = inLatch->cycles;
+        case beq:
+            outLatch->opcode = inLatch->inst.opcode;
+            outLatch->reg1 = inLatch->inst.rs;
+            outLatch->reg2 = inLatch->inst.rt;
+        case sw:
+            outLatch->opcode = inLatch->inst.opcode;
+            outLatch->reg1 = inLatch->inst.rs;
+            outLatch->reg2 = inLatch->inst.rt;
         default:
-            outLatch->opcode = 0;
+            outLatch->opcode = inLatch->inst.opcode;
             outLatch->reg1 = 0;
             outLatch->reg2 = 0;
             outLatch->regResult = 0;
             outLatch->immediate = 0;
             outLatch->cycles = 0;
+    }*/
+    if(((registers[inLatch->inst.rt].flag) || (inLatch->inst.opcode==addi) || (inLatch->inst.opcode==lw) || (inLatch->inst.opcode==haltSimulation)) && (registers[inLatch->inst.rs].flag)){
+        //if the flag value is true, the registers are good to go
+        //this if runs if the flaggs are good, or it is an addi, halt, or lw
+        outLatch->opcode = inLatch->inst.opcode;
+        outLatch->immediate = inLatch->inst.imm;
+        outLatch->reg1 = registers[inLatch->inst.rs].value;
+        if((inLatch->inst.opcode==addi) || (inLatch->inst.opcode==lw) || (inLatch->inst.opcode==haltSimulation)) {
+            outLatch->reg2 = 0;
+        }
+        else {
+            registers[inLatch->inst.rt].value;
+        }
+        switch (inLatch->inst.opcode) {
+            case add:
+            case sub:
+            case mul:
+                outLatch->regResult = inLatch->inst.rd;
+                registers[outLatch->regResult].flag = false;
+                break;
+            case addi:
+            case lw:
+                outLatch->regResult = inLatch->inst.rt;
+                registers[outLatch->regResult].flag = false;
+                break;
+            case beq:
+                inLatch->inst.opcode
+                        //incomplete
+            case sw:
+                //incomplete
+            case haltSimulation:
+                outLatch->opcode = haltSimulation;
+                outLatch->reg1 = 0;
+                outLatch->reg2 = 0;
+                outLatch->regResult = 0;
+                outLatch->immediate = 0;
+                outLatch->cycles = 0;
+            default:
+                outLatch->regResult = 0;
+                break;
+        }
     }
-    return;
+    else{//NOP
+        outLatch->opcode = add;
+        outLatch->reg1 = 0;
+        outLatch->reg2 = 0;
+        outLatch->regResult = 0;
+        outLatch->immediate = 0;
+        outLatch->cycles = 0;
 
+    }
+return;
 }
 void EX(struct IDLatchEX *inLatch,struct EXLatchM *outLatch){
     /*
