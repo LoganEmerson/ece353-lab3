@@ -84,7 +84,6 @@ struct Inst iM[MEM_SIZE];
 int dM[MEM_SIZE];
 double ifUtil, idUtil,exUtil,memUtil,wbUtil;
 
-
 int c, m, n;//made global so IF, ID, EX, MEM, and WB can access
 
 char *progScanner(char line[]) {
@@ -165,42 +164,6 @@ char *progScanner(char line[]) {
    In this simulator, we will assume that consecutive commas with nothing in between
    (e.g., ,,) are a typo for a single comma, and not flag them as an error; such
    consecutive commas will be treated as a single comma.*/
-}
-
-char *regNumberConverter(char* input) {
-    char *token[6];
-    char *ret = "";
-    char *substr;
-    token[0] = strtok(input, " ");
-    int i = 0;
-    while (token[i] != NULL) {//fills token array with the words in the line
-        token[i++] = strtok(NULL, " ");
-    }
-    for (int j = 0; j < i; j++) {
-        strncpy(substr, token[i], 1);//stores the first char of the token in substr
-        if (!strcmp(substr, "$")) {
-            strcat(" ", ret);
-            strcat(getRegNum(token[i]), ret);
-        } else {
-            strcat(" ", ret);
-            strcat(token[i], ret);
-        }
-    }
-    return ret;
-/* This function accepts as input the output of
-the progScanner() function and returns a pointer to a character string in which all
-register names are converted to numbers.
-MIPS assembly allows you to specify either the name or the number of a register.
-For example, both $zero and $0 are the zero register; $t0 and $8 both refer to register
-8,and so on. Your parser should be able to handle either representation. (Use the
-table of registers in Hennessy and Patterson or look up the register numbers online.)
-The code scans down the string looking for the $ delimiter. Whatever is to the right
-of this (and to the left of a space or the end of string) is the label or number of the
-register. If the register is specified as a number (e.g., $5), then the $ is stripped and
-5 is left behind. If it is specified as a register name (e.g., $s0), the name is replaced
-by the equivalent register number). If an illegal register name is detected (e.g., $y5)
-or the register number is out of bounds (e.g., $987), an error is reported and the
-simulator halts*/
 }
 
 char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
@@ -292,6 +255,42 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
         else
             return "*";//if we get *s then we know something isnt right
     }
+}
+
+char *regNumberConverter(char* input) {
+    char *token[6];
+    char *ret = "";
+    char *substr;
+    token[0] = strtok(input, " ");
+    int i = 0;
+    while (token[i] != NULL) {//fills token array with the words in the line
+        token[i++] = strtok(NULL, " ");
+    }
+    for (int j = 0; j < i; j++) {
+        strncpy(substr, token[i], 1);//stores the first char of the token in substr
+        if (!strcmp(substr, "$")) {
+            strcat(" ", ret);
+            strcat(getRegNum(token[i]), ret);
+        } else {
+            strcat(" ", ret);
+            strcat(token[i], ret);
+        }
+    }
+    return ret;
+/* This function accepts as input the output of
+the progScanner() function and returns a pointer to a character string in which all
+register names are converted to numbers.
+MIPS assembly allows you to specify either the name or the number of a register.
+For example, both $zero and $0 are the zero register; $t0 and $8 both refer to register
+8,and so on. Your parser should be able to handle either representation. (Use the
+table of registers in Hennessy and Patterson or look up the register numbers online.)
+The code scans down the string looking for the $ delimiter. Whatever is to the right
+of this (and to the left of a space or the end of string) is the label or number of the
+register. If the register is specified as a number (e.g., $5), then the $ is stripped and
+5 is left behind. If it is specified as a register name (e.g., $s0), the name is replaced
+by the equivalent register number). If an illegal register name is detected (e.g., $y5)
+or the register number is out of bounds (e.g., $987), an error is reported and the
+simulator halts*/
 }
 
 struct Inst parser(char* input){
@@ -660,7 +659,7 @@ register-accurate. You don’t have to simulate the control signals. So, you can
 simply pass the instruction from one pipeline latch to the nxt.*/
 
 
-main (int argc, char *argv[]) {
+int main (int argc, char *argv[]) {
     int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
     int i;//for loop counter
     long mips_reg[REG_NUM];
