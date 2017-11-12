@@ -10,8 +10,71 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEMSIZE 2048
+#define MEM_SIZE 2048
 #define WORDMAX 510
+
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+typedef enum {
+    add, sub, addi, mul, lw, sw, beq, haltSimulation
+} Opcode;
+
+struct Inst {
+    Opcode opcode;
+    int rs;
+    int rt;
+    int rd;
+    int imm;
+};
+
+struct Register {
+    int value;
+    bool flag; // if flag == true, the register is safe
+};
+
+struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
+    struct Inst inst;
+    int cycles;
+};
+
+struct IDLatchEX {//Latch between instruction decode and Execute
+    Opcode opcode;
+    int reg1; //reg value, rs
+    int reg2; //reg value, rt
+    int regResult; // rd
+    int immediate;
+
+    int cycles;
+};
+
+struct EXLatchM {//latch between Execute and Data Memory
+    Opcode opcode;
+    int reg2;
+    int regResult;
+    int result;
+
+    int cycles;
+};
+
+struct MLatchWB {//Latch between memory and write back
+    Opcode opcode;
+    int regResult;
+    int result;
+};
+long pgm_c = 0;//program counter
+//assert( pc < 255 );
+//Array of registers
+struct Register registers[REG_NUM];
+//Instruction memory
+struct Inst iM[MEM_SIZE];
+//Data memory
+int dM[MEM_SIZE];
+//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+//int legalCommand(struct Command command){*/
+
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
@@ -75,105 +138,45 @@ main (int argc, char *argv[]) {
         linecount++;//increment the linecounter for the IM
     }//end the while statement that fills IM
 
-    ///////////////////////////////////////////
+        ///////////////////////////////////////////
 
-    //output code 2: the following code will output the register
-    //value to screen at every cycle and wait for the ENTER key
-    //to be pressed; this will make it proceed to the next cycle
-    printf("cycle: %d ",sim_cycle);
-    if(sim_mode==1){
-        for (i=1;i<REG_NUM;i++){
-            printf("%d  ",mips_reg[i]);
+        //output code 2: the following code will output the register
+        //value to screen at every cycle and wait for the ENTER key
+        //to be pressed; this will make it proceed to the next cycle
+        printf("cycle: %d ", sim_cycle);
+        if (sim_mode == 1) {
+            for (i = 1; i < REG_NUM; i++) {
+                printf("%d  ", mips_reg[i]);
+            }
         }
-    }
-    printf("%d\n",pgm_c);
-    pgm_c+=4;
-    sim_cycle+=1;
-    test_counter++;
-    printf("press ENTER to continue\n");
-    while(getchar() != '\n');
+        printf("%d\n", pgm_c);
+        pgm_c += 4;
+        sim_cycle += 1;
+        test_counter++;
+        printf("press ENTER to continue\n");
+        while (getchar() != '\n');
 
-    ////////////////////////////////////////////
-    if(sim_mode==0){
-        fprintf(output,"program name: %s\n",argv[5]);
-        fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",
-                ifUtil, idUtil, exUtil, memUtil, wbUtil);
-        // add the (double) stage_counter/sim_cycle for each
-        // stage following sequence IF ID EX MEM WB
+        ////////////////////////////////////////////
+        if (sim_mode == 0) {
+            fprintf(output, "program name: %s\n", argv[5]);
+            fprintf(output, "stage utilization: %f  %f  %f  %f  %f \n",
+                    ifUtil, idUtil, exUtil, memUtil, wbUtil);
+            // add the (double) stage_counter/sim_cycle for each
+            // stage following sequence IF ID EX MEM WB
 
-        fprintf(output,"register values ");
-        for (i=1;i<REG_NUM;i++){
-            fprintf(output,"%d  ",mips_reg[i]);
+            fprintf(output, "register values ");
+            for (i = 1; i < REG_NUM; i++) {
+                fprintf(output, "%d  ", mips_reg[i]);
+            }
+            fprintf(output, "%d\n", pgm_c);
+
         }
-        fprintf(output,"%d\n",pgm_c);
-
+        //close input and output files at the end of the simulation
+        fclose(input);
+        fclose(output);
+        return 0;
     }
-    //close input and output files at the end of the simulation
-    fclose(input);
-    fclose(output);
-    return 0;
-}
 
-////////////////////////////
-/////ABOVE IS TA CODE///////
-/////BELOW IS OUR CODE//////
-////////////////////////////
-typedef enum {
-    add, sub, addi, mul, lw, sw, beq, haltSimulation
-} Opcode;
-
-struct Inst {
-    Opcode opcode;
-    int rs;
-    int rt;
-    int rd;
-    int imm;
-};
-
-struct Register {
-    int value;
-    bool flag; // if flag == true, the register is safe
-};
-
-struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
-    struct Inst inst;
-	int cycles;
-};
-
-struct IDLatchEX {//Latch between instruction decode and Execute
-    Opcode opcode;
-    int reg1; //reg value
-    int reg2; //reg value
-    int regResult;
-    int immediate;
-
-    int cycles;
-};
-
-struct EXLatchM {//latch between Execute and Data Memory
-    Opcode opcode;
-    int reg2;
-    int regResult;
-    int result;
-
-    int cycles;
-};
-
-struct MLatchWB {//Latch between memory and write back
-    Opcode opcode;
-    int regResult;
-    int result;
-};
-long pgm_c = 0;//program counter
-//assert( pc < 255 );
-//Array of registers
-struct Register registers[REG_NUM];
-//Instruction memory
-struct Inst iM[MEM_SIZE];
-//Data memory
-int dM[MEM_SIZE];
-//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
-//int legalCommand(struct Command command){*/
 
 
 
@@ -385,7 +388,7 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
     }
 }
 
-struct inst parser(char* input){
+struct Inst parser(char* input){
     char* token[6];
     token[0]=strtok(input," ");
     int i=0;
@@ -402,67 +405,67 @@ struct inst parser(char* input){
     //IF LOGIC ERRORS,
     struct Inst retVal;
     if (!strcmp(token[0], "haltSimulation")) {
-        retVal->opcode=haltSimulation;
-        retVal->rs=0;
-        retVal->rt=0;
-        retVal->rd=0;
-        retVal->imm=0;
+        retVal.opcode=haltSimulation;
+        retVal.rs=0;
+        retVal.rt=0;
+        retVal.rd=0;
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "add")) {
-        retVal->opcode=add;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->r= regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=add;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "sub")) {
-        retVal->opcode=sub;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=sub;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "addi")) {
-        retVal->opcode=addi;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(tokens[3]);
+        retVal.opcode=addi;
+        retVal.rs=atoi(token[2]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[3]);
     }
     else if (!strcmp(token[0], "mul")) {
-        retVal->opcode=mul;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=mul;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "lw")) {
-        retVal->opcode=lw;
-        retVal->rs=regNumberConverter(token[3]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(tokens[2]);
+        retVal.opcode=lw;
+        retVal.rs=atoi(token[3]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "sw")) {
-        retVal->opcode=sw;
-        retVal->rs=regNumberConverter(token[3]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(tokens[2]);
+        retVal.opcode=sw;
+        retVal.rs=atoi(token[3]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "beq")) {
-        retVal->opcode=beq;
-        retVal->rs=regNumberConverter(token[1]);
-        retVal->rt=regNumberConverter(token[2]);
-        retVal->rd=0;
-        retVal->imm=atoi(token[3]);
+        retVal.opcode=beq;
+        retVal.rs=atoi(token[1]);
+        retVal.rt=atoi(token[2]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[3]);
     }
     else {
         printf("Error On Line Containing %s : The opcode %s is illegal", input, token[0]);
         exit(0);
     }
     if(retVal.imm>0x0000ffff){
-        printf("Error On Line Containing %s : The immediate value %d is to large", input, retval.imm);
+        printf("Error On Line Containing %s : The immediate value %d is to large", input, retVal.imm);
         exit(0);
     }
     /*else if(){
@@ -470,7 +473,7 @@ struct inst parser(char* input){
         exit(0);
     }*/
     return retVal;
-    /* This function uses the output of regNumberConverter().
+    /* This function uses the output of regNumberConverter()
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -482,7 +485,7 @@ instr*/
 }
 
 void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=IM[pgm_c / 4];
+    struct Inst instruction=iM[pgm_c / 4];
     inLatch->inst=inst;
     inLatch->cycles=cycles;
 }
@@ -555,7 +558,7 @@ struct EXLatchM {//latch between Execute and Data Memory
     int cycles;
 };
      */
-    switch (inLatch->inst.opcode) {
+    switch (inLatch->opcode) {
         case add:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
@@ -613,7 +616,7 @@ struct MLatchWB {//Latch between memory and write back
 };
 
      */
-    switch (inLatch->inst.opcode) {
+    switch (inLatch->opcode) {
         case add:
         case sub:
         case mul:
