@@ -6,12 +6,22 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <stdbool.h>
 //feel free to add here any additional library names you may nee
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
 #define MEMSIZE 2048
 #define WORDMAX 510
+
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+int linecount = 0;//number of lines
+FILE *input;
+FILE *output;
 
 typedef enum {
     add, sub, addi, mul, lw, sw, beq, haltSimulation
@@ -78,8 +88,6 @@ main (int argc, char *argv[]) {
 	//define your own counter for the usage of each pipeline stage here
 
 	int test_counter = 0;
-	FILE *input;
-	FILE *output;
 	printf("The arguments are:");
 
 	for (i = 1; i < argc; i++) {
@@ -121,7 +129,6 @@ main (int argc, char *argv[]) {
 			mips_reg[i] = 0;
 		}
 	}
-	int linecount = 0;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
@@ -180,7 +187,7 @@ main (int argc, char *argv[]) {
 
 
 
-char *progScanner(char input[]) {
+char *progScanner(char line[]) {
     char out[100];//what is to be passed down to next function, output
     int i;//incrementer for loop below
     int oc = 0;//counter for out char array
@@ -197,7 +204,7 @@ char *progScanner(char input[]) {
                 paren++;
                 if (oc > 0) {//checking to see if previous character was a space, need oc to be >0
                     if (out[oc - 1] != 0x20) {//checking to see if previous char was a space
-                        output[oc] = 0x20;//put a space if previous character was not a space
+                        out[oc] = 0x20;//put a space if previous character was not a space
                         oc++;//increment oc
                     }//end check for space
                 }//end check for oc>0
@@ -220,7 +227,7 @@ char *progScanner(char input[]) {
                     exit(0);//since, error, exit the program
                 }//do nothing, as output of progscanner should not have leading spaces
             } else {//when oc, output counter != 0, then put a space
-                if (output[oc - 1] != 0x20) {//if previous character in output is not a space
+                if (out[oc - 1] != 0x20) {//if previous character in output is not a space
                     out[oc] = 0x20;
                     oc++;//when we put something in output array, then increment
                 }
@@ -237,7 +244,7 @@ char *progScanner(char input[]) {
 
             //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
         else {//when we read anything but a comma, space, or parentheses
-            output[oc] = line[i];
+            out[oc] = line[i];
             oc++;
             paren = 0;//reset # of parentheses
             space = 0;//reset # of consecutive spaces
