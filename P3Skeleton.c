@@ -402,60 +402,60 @@ struct inst parser(char* input){
     //IF LOGIC ERRORS,
     struct Inst retVal;
     if (!strcmp(token[0], "haltSimulation")) {
-        retVal->opcode=haltSimulation;
-        retVal->rs=0;
-        retVal->rt=0;
-        retVal->rd=0;
-        retVal->imm=0;
+        retVal.opcode=haltSimulation;
+        retVal.rs=0;
+        retVal.rt=0;
+        retVal.rd=0;
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "add")) {
-        retVal->opcode=add;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->r= regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=add;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "sub")) {
-        retVal->opcode=sub;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=sub;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "addi")) {
-        retVal->opcode=addi;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(token[3]);
+        retVal.opcode=addi;
+        retVal.rs=atoi(token[2]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[3]);
     }
     else if (!strcmp(token[0], "mul")) {
-        retVal->opcode=mul;
-        retVal->rs=regNumberConverter(token[2]);
-        retVal->rt=regNumberConverter(token[3]);
-        retVal->rd=regNumberConverter(token[1]);
-        retVal->imm=0;
+        retVal.opcode=mul;
+        retVal.rs=atoi(token[2]);
+        retVal.rt= atoi(token[3]);
+        retVal.rd=atoi(token[1]);
+        retVal.imm=0;
     }
     else if (!strcmp(token[0], "lw")) {
-        retVal->opcode=lw;
-        retVal->rs=regNumberConverter(token[3]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(token[2]);
+        retVal.opcode=lw;
+        retVal.rs=atoi(token[3]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "sw")) {
-        retVal->opcode=sw;
-        retVal->rs=regNumberConverter(token[3]);
-        retVal->rt=regNumberConverter(token[1]);
-        retVal->rd=0;
-        retVal->imm=atoi(token[2]);
+        retVal.opcode=sw;
+        retVal.rs=atoi(token[3]);
+        retVal.rt=atoi(token[1]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[2]);
     }
     else if (!strcmp(token[0], "beq")) {
-        retVal->opcode=beq;
-        retVal->rs=regNumberConverter(token[1]);
-        retVal->rt=regNumberConverter(token[2]);
-        retVal->rd=0;
-        retVal->imm=atoi(token[3]);
+        retVal.opcode=beq;
+        retVal.rs=atoi(token[1]);
+        retVal.rt=atoi(token[2]);
+        retVal.rd=0;
+        retVal.imm=atoi(token[3]);
     }
     else {
         printf("Error On Line Containing %s : The opcode %s is illegal", input, token[0]);
@@ -555,7 +555,7 @@ struct EXLatchM {//latch between Execute and Data Memory
     int cycles;
 };
      */
-    switch (inLatch->inst.opcode) {
+    switch (inLatch->opcode) {
         case add:
             outLatch->opcode=inLatch->opcode;
             outLatch->reg2=inLatch->reg2;
@@ -613,7 +613,7 @@ struct MLatchWB {//Latch between memory and write back
 };
 
      */
-    switch (inLatch->inst.opcode) {
+    switch (inLatch->opcode) {
         case add:
         case sub:
         case mul:
