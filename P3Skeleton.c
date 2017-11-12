@@ -10,14 +10,9 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEM_SIZE 2048
+#define MEMSIZE 2048
 #define WORDMAX 510
 
-
-////////////////////////////
-/////ABOVE IS TA CODE///////
-/////BELOW IS OUR CODE//////
-////////////////////////////
 typedef enum {
     add, sub, addi, mul, lw, sw, beq, haltSimulation
 } Opcode;
@@ -42,9 +37,9 @@ struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
 
 struct IDLatchEX {//Latch between instruction decode and Execute
     Opcode opcode;
-    int reg1; //reg value, rs
-    int reg2; //reg value, rt
-    int regResult; // rd
+    int reg1; //reg value
+    int reg2; //reg value
+    int regResult;
     int immediate;
 
     int cycles;
@@ -72,9 +67,6 @@ struct Register registers[REG_NUM];
 struct Inst iM[MEM_SIZE];
 //Data memory
 int dM[MEM_SIZE];
-//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
-//int legalCommand(struct Command command){*/
-
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
@@ -138,45 +130,52 @@ main (int argc, char *argv[]) {
         linecount++;//increment the linecounter for the IM
     }//end the while statement that fills IM
 
-        ///////////////////////////////////////////
+    ///////////////////////////////////////////
 
-        //output code 2: the following code will output the register
-        //value to screen at every cycle and wait for the ENTER key
-        //to be pressed; this will make it proceed to the next cycle
-        printf("cycle: %d ", sim_cycle);
-        if (sim_mode == 1) {
-            for (i = 1; i < REG_NUM; i++) {
-                printf("%d  ", mips_reg[i]);
-            }
+    //output code 2: the following code will output the register
+    //value to screen at every cycle and wait for the ENTER key
+    //to be pressed; this will make it proceed to the next cycle
+    printf("cycle: %d ",sim_cycle);
+    if(sim_mode==1){
+        for (i=1;i<REG_NUM;i++){
+            printf("%d  ",mips_reg[i]);
         }
-        printf("%d\n", pgm_c);
-        pgm_c += 4;
-        sim_cycle += 1;
-        test_counter++;
-        printf("press ENTER to continue\n");
-        while (getchar() != '\n');
-
-        ////////////////////////////////////////////
-        if (sim_mode == 0) {
-            fprintf(output, "program name: %s\n", argv[5]);
-            fprintf(output, "stage utilization: %f  %f  %f  %f  %f \n",
-                    ifUtil, idUtil, exUtil, memUtil, wbUtil);
-            // add the (double) stage_counter/sim_cycle for each
-            // stage following sequence IF ID EX MEM WB
-
-            fprintf(output, "register values ");
-            for (i = 1; i < REG_NUM; i++) {
-                fprintf(output, "%d  ", mips_reg[i]);
-            }
-            fprintf(output, "%d\n", pgm_c);
-
-        }
-        //close input and output files at the end of the simulation
-        fclose(input);
-        fclose(output);
-        return 0;
     }
+    printf("%d\n",pgm_c);
+    pgm_c+=4;
+    sim_cycle+=1;
+    test_counter++;
+    printf("press ENTER to continue\n");
+    while(getchar() != '\n');
 
+    ////////////////////////////////////////////
+    if(sim_mode==0){
+        fprintf(output,"program name: %s\n",argv[5]);
+        fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",
+                ifUtil, idUtil, exUtil, memUtil, wbUtil);
+        // add the (double) stage_counter/sim_cycle for each
+        // stage following sequence IF ID EX MEM WB
+
+        fprintf(output,"register values ");
+        for (i=1;i<REG_NUM;i++){
+            fprintf(output,"%d  ",mips_reg[i]);
+        }
+        fprintf(output,"%d\n",pgm_c);
+
+    }
+    //close input and output files at the end of the simulation
+    fclose(input);
+    fclose(output);
+    return 0;
+}
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+
+//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+//int legalCommand(struct Command command){*/
 
 
 
@@ -473,7 +472,7 @@ struct Inst parser(char* input){
         exit(0);
     }*/
     return retVal;
-    /* This function uses the output of regNumberConverter()
+    /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -485,8 +484,8 @@ instr*/
 }
 
 void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=iM[pgm_c / 4];
-    inLatch->inst=inst;
+    struct Inst instruction=IM[pgm_c / 4];
+    inLatch->inst=instruction;
     inLatch->cycles=cycles;
 }
 void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
