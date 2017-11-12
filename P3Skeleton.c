@@ -133,7 +133,7 @@ main (int argc, char *argv[]) {
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
 	while (fgets(line, 100, input)) {//keep getting lines from input file
-       iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into IM
+       iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into I
         linecount++;//increment the linecounter for the IM
     }//end the while statement that fills IM
 
