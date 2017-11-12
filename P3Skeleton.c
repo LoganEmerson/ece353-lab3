@@ -11,7 +11,7 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEMSIZE 2048
+#define MEM_SIZE 2048
 #define WORDMAX 510
 
 
@@ -138,6 +138,37 @@ main (int argc, char *argv[]) {
     }//end the while statement that fills IM
 
     ///////////////////////////////////////////
+    //Initializing the pipelined datapath
+    struct IFLatchID *state1 = malloc(sizeof(struct IFLatchID));
+    state1->inst.opcode=add;
+    state1->inst.rd=0;
+    state1->inst.rs=0;
+    state1->inst.rt=0;
+    state1->inst.imm=0;
+    state1->cycles=0;
+
+    struct IDLatchEX *state2 = malloc(sizeof(struct IDLatchEX));
+    state2->opcode=add;
+    state2->reg1=0;
+    state2->reg2=0;
+    state2->regResult=0;
+    state2->cycles=0;
+    state2->immediate=0;
+
+    struct EXLatchM *state3 = malloc(sizeof(struct EXLatchM));
+    state3->opcode=add;
+    state3->result=0;
+    state3->regResult=0;
+    state3->cycles=0;
+    state3->reg2=0;
+
+    struct MLatchWB *state4 = malloc(sizeof(struct MLatchWB));
+    state4->opcode=add;
+    state4->regResult=0;
+    state4->result=0;
+
+
+
 
     //output code 2: the following code will output the register
     //value to screen at every cycle and wait for the ENTER key
@@ -491,7 +522,7 @@ instr*/
 }
 
 void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=IM[pgm_c / 4];
+    struct Inst instruction=iM[pgm_c / 4];
     inLatch->inst=instruction;
     inLatch->cycles=cycles;
 }
