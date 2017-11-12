@@ -10,8 +10,71 @@
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEMSIZE 2048
+#define MEM_SIZE 2048
 #define WORDMAX 510
+
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+typedef enum {
+    add, sub, addi, mul, lw, sw, beq, haltSimulation
+} Opcode;
+
+struct Inst {
+    Opcode opcode;
+    int rs;
+    int rt;
+    int rd;
+    int imm;
+};
+
+struct Register {
+    int value;
+    bool flag; // if flag == true, the register is safe
+};
+
+struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
+    struct Inst inst;
+    int cycles;
+};
+
+struct IDLatchEX {//Latch between instruction decode and Execute
+    Opcode opcode;
+    int reg1; //reg value, rs
+    int reg2; //reg value, rt
+    int regResult; // rd
+    int immediate;
+
+    int cycles;
+};
+
+struct EXLatchM {//latch between Execute and Data Memory
+    Opcode opcode;
+    int reg2;
+    int regResult;
+    int result;
+
+    int cycles;
+};
+
+struct MLatchWB {//Latch between memory and write back
+    Opcode opcode;
+    int regResult;
+    int result;
+};
+long pgm_c = 0;//program counter
+//assert( pc < 255 );
+//Array of registers
+struct Register registers[REG_NUM];
+//Instruction memory
+struct Inst iM[MEM_SIZE];
+//Data memory
+int dM[MEM_SIZE];
+//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+//int legalCommand(struct Command command){*/
+
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
@@ -113,68 +176,7 @@ main (int argc, char *argv[]) {
         fclose(output);
         return 0;
     }
-}
 
-////////////////////////////
-/////ABOVE IS TA CODE///////
-/////BELOW IS OUR CODE//////
-////////////////////////////
-typedef enum {
-    add, sub, addi, mul, lw, sw, beq, haltSimulation
-} Opcode;
-
-struct Inst {
-    Opcode opcode;
-    int rs;
-    int rt;
-    int rd;
-    int imm;
-};
-
-struct Register {
-    int value;
-    bool flag; // if flag == true, the register is safe
-};
-
-struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
-    struct Inst inst;
-	int cycles;
-};
-
-struct IDLatchEX {//Latch between instruction decode and Execute
-    Opcode opcode;
-    int reg1; //reg value, rs
-    int reg2; //reg value, rt
-    int regResult; // rd
-    int immediate;
-
-    int cycles;
-};
-
-struct EXLatchM {//latch between Execute and Data Memory
-    Opcode opcode;
-    int reg2;
-    int regResult;
-    int result;
-
-    int cycles;
-};
-
-struct MLatchWB {//Latch between memory and write back
-    Opcode opcode;
-    int regResult;
-    int result;
-};
-long pgm_c = 0;//program counter
-//assert( pc < 255 );
-//Array of registers
-struct Register registers[REG_NUM];
-//Instruction memory
-struct Inst iM[MEM_SIZE];
-//Data memory
-int dM[MEM_SIZE];
-//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
-//int legalCommand(struct Command command){*/
 
 
 
@@ -471,7 +473,7 @@ struct Inst parser(char* input){
         exit(0);
     }*/
     return retVal;
-    /* This function uses the output of regNumberConverter().
+    /* This function uses the output of regNumberConverter()
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -483,7 +485,7 @@ instr*/
 }
 
 void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=IM[pgm_c / 4];
+    struct Inst instruction=iM[pgm_c / 4];
     inLatch->inst=inst;
     inLatch->cycles=cycles;
 }
