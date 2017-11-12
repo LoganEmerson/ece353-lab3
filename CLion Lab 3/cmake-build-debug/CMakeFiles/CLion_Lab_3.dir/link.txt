@@ -1,0 +1,1 @@
+/usr/bin/cc -g  -Wl,--enable-auto-import CMakeFiles/CLion_Lab_3.dir/main.c.o  -o CLion_Lab_3.exe -Wl,--out-implib,libCLion_Lab_3.dll.a -Wl,--major-image-version,0,--minor-image-version,0 

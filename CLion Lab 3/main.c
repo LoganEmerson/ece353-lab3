@@ -1,6 +1,6 @@
-// Author: Shikang Xu; ECE 353 T
-
 // List the full names of ALL group members at the top of your code.
+//Logan Emerson, Aaron Linz, Matt Delude
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
