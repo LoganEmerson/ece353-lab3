@@ -6,11 +6,12 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <stdbool.h>
 //feel free to add here any additional library names you may nee
 #define SINGLE 1
 #define BATCH 0
 #define REG_NUM 32
-#define MEM_SIZE 2048
+#define MEMSIZE 2048
 #define WORDMAX 510
 
 
@@ -18,6 +19,10 @@
 /////ABOVE IS TA CODE///////
 /////BELOW IS OUR CODE//////
 ////////////////////////////
+int linecount = 0;//number of lines
+FILE *input;
+FILE *output;
+
 typedef enum {
     add, sub, addi, mul, lw, sw, beq, haltSimulation
 } Opcode;
@@ -42,9 +47,9 @@ struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
 
 struct IDLatchEX {//Latch between instruction decode and Execute
     Opcode opcode;
-    int reg1; //reg value, rs
-    int reg2; //reg value, rt
-    int regResult; // rd
+    int reg1; //reg value
+    int reg2; //reg value
+    int regResult;
     int immediate;
 
     int cycles;
@@ -72,9 +77,6 @@ struct Register registers[REG_NUM];
 struct Inst iM[MEM_SIZE];
 //Data memory
 int dM[MEM_SIZE];
-//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
-//int legalCommand(struct Command command){*/
-
 
 main (int argc, char *argv[]) {
 	int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
@@ -86,8 +88,6 @@ main (int argc, char *argv[]) {
 	//define your own counter for the usage of each pipeline stage here
 
 	int test_counter = 0;
-	FILE *input;
-	FILE *output;
 	printf("The arguments are:");
 
 	for (i = 1; i < argc; i++) {
@@ -129,7 +129,6 @@ main (int argc, char *argv[]) {
 			mips_reg[i] = 0;
 		}
 	}
-	int linecount = 0;//number of lines
 	//char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
 	char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
@@ -138,50 +137,57 @@ main (int argc, char *argv[]) {
         linecount++;//increment the linecounter for the IM
     }//end the while statement that fills IM
 
-        ///////////////////////////////////////////
+    ///////////////////////////////////////////
 
-        //output code 2: the following code will output the register
-        //value to screen at every cycle and wait for the ENTER key
-        //to be pressed; this will make it proceed to the next cycle
-        printf("cycle: %d ", sim_cycle);
-        if (sim_mode == 1) {
-            for (i = 1; i < REG_NUM; i++) {
-                printf("%d  ", mips_reg[i]);
-            }
+    //output code 2: the following code will output the register
+    //value to screen at every cycle and wait for the ENTER key
+    //to be pressed; this will make it proceed to the next cycle
+    printf("cycle: %d ",sim_cycle);
+    if(sim_mode==1){
+        for (i=1;i<REG_NUM;i++){
+            printf("%d  ",mips_reg[i]);
         }
-        printf("%d\n", pgm_c);
-        pgm_c += 4;
-        sim_cycle += 1;
-        test_counter++;
-        printf("press ENTER to continue\n");
-        while (getchar() != '\n');
-
-        ////////////////////////////////////////////
-        if (sim_mode == 0) {
-            fprintf(output, "program name: %s\n", argv[5]);
-            fprintf(output, "stage utilization: %f  %f  %f  %f  %f \n",
-                    ifUtil, idUtil, exUtil, memUtil, wbUtil);
-            // add the (double) stage_counter/sim_cycle for each
-            // stage following sequence IF ID EX MEM WB
-
-            fprintf(output, "register values ");
-            for (i = 1; i < REG_NUM; i++) {
-                fprintf(output, "%d  ", mips_reg[i]);
-            }
-            fprintf(output, "%d\n", pgm_c);
-
-        }
-        //close input and output files at the end of the simulation
-        fclose(input);
-        fclose(output);
-        return 0;
     }
+    printf("%d\n",pgm_c);
+    pgm_c+=4;
+    sim_cycle+=1;
+    test_counter++;
+    printf("press ENTER to continue\n");
+    while(getchar() != '\n');
+
+    ////////////////////////////////////////////
+    if(sim_mode==0){
+        fprintf(output,"program name: %s\n",argv[5]);
+        fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",
+                ifUtil, idUtil, exUtil, memUtil, wbUtil);
+        // add the (double) stage_counter/sim_cycle for each
+        // stage following sequence IF ID EX MEM WB
+
+        fprintf(output,"register values ");
+        for (i=1;i<REG_NUM;i++){
+            fprintf(output,"%d  ",mips_reg[i]);
+        }
+        fprintf(output,"%d\n",pgm_c);
+
+    }
+    //close input and output files at the end of the simulation
+    fclose(input);
+    fclose(output);
+    return 0;
+}
+
+////////////////////////////
+/////ABOVE IS TA CODE///////
+/////BELOW IS OUR CODE//////
+////////////////////////////
+
+//char *progScanner(...){} /*This reads as input a pointer to a string holding the next
+//int legalCommand(struct Command command){*/
 
 
 
 
-
-char *progScanner(char input[]) {
+char *progScanner(char line[]) {
     char out[100];//what is to be passed down to next function, output
     int i;//incrementer for loop below
     int oc = 0;//counter for out char array
@@ -198,7 +204,7 @@ char *progScanner(char input[]) {
                 paren++;
                 if (oc > 0) {//checking to see if previous character was a space, need oc to be >0
                     if (out[oc - 1] != 0x20) {//checking to see if previous char was a space
-                        output[oc] = 0x20;//put a space if previous character was not a space
+                        out[oc] = 0x20;//put a space if previous character was not a space
                         oc++;//increment oc
                     }//end check for space
                 }//end check for oc>0
@@ -221,7 +227,7 @@ char *progScanner(char input[]) {
                     exit(0);//since, error, exit the program
                 }//do nothing, as output of progscanner should not have leading spaces
             } else {//when oc, output counter != 0, then put a space
-                if (output[oc - 1] != 0x20) {//if previous character in output is not a space
+                if (out[oc - 1] != 0x20) {//if previous character in output is not a space
                     out[oc] = 0x20;
                     oc++;//when we put something in output array, then increment
                 }
@@ -238,7 +244,7 @@ char *progScanner(char input[]) {
 
             //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
         else {//when we read anything but a comma, space, or parentheses
-            output[oc] = line[i];
+            out[oc] = line[i];
             oc++;
             paren = 0;//reset # of parentheses
             space = 0;//reset # of consecutive spaces
@@ -473,7 +479,7 @@ struct Inst parser(char* input){
         exit(0);
     }*/
     return retVal;
-    /* This function uses the output of regNumberConverter()
+    /* This function uses the output of regNumberConverter().
 The instruction is returned as an inst struct with fields for each of the fields of MIPS
 assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
 will be present in all instructions; for example, beq will have just two register and
@@ -485,8 +491,8 @@ instr*/
 }
 
 void IF(struct IFLatchID *inLatch, int cycles){
-    struct Inst instruction=iM[pgm_c / 4];
-    inLatch->inst=inst;
+    struct Inst instruction=IM[pgm_c / 4];
+    inLatch->inst=instruction;
     inLatch->cycles=cycles;
 }
 void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
