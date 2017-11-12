@@ -761,7 +761,7 @@ be resolved in the EX stage. We will cover in the lectures some some issues rela
 to realizing these functions.
 Keep in mind that the only requirement is that the simulator be cycle-by-cycle
 register-accurate. You don’t have to simulate the control signals. So, you can
-simply pass the instruction from one pipeline latch to the next.*/
+simply pass the instruction from one pipeline latch to the nxt.*/
 
 
 
