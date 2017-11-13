@@ -7,6 +7,7 @@
 #include <math.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <ctype.h>
 //feel free to add here any additional library names you may nee
 #define SINGLE 1
 #define BATCH 0
@@ -20,6 +21,7 @@
 /////BELOW IS OUR CODE//////
 ////////////////////////////
 int linecount = 0;//number of lines
+long pgm_c = 0;//program counter, need assertion that PC < 512, max # of lines in IM
 FILE *input;
 FILE *output;
 
@@ -74,7 +76,6 @@ struct MLatchWB {//Latch between memory and write back
     long cycles;
     bool done;
 };
-long pgm_c = 0;//program counter
 //assert( pc < 255 );
 //Array of registers
 struct Register registers[REG_NUM];
@@ -87,16 +88,21 @@ double ifUtil, idUtil,exUtil,memUtil,wbUtil;
 int c, m, n;//made global so IF, ID, EX, MEM, and WB can access
 
 char *progScanner(char line[]) {
-    char out[100];//what is to be passed down to next function, output
+    //printf("Got to progScanner");
+    char temp;
     int i;//incrementer for loop below
+    char out[100];//what is to be passed down to next function, output
+    for(i=0;i<100;i++)  out[i]=' ';
     int oc = 0;//counter for out char array
     int space = 0; //for counting more than 1 consecutive space
     int comma = 0; //for counting more than 1 consecutive comma
-    //int leftp=0; //counter for # of left parentheses
     int paren = 0;//count for # of parentheses
 
     for (i = 0; i < 100; i++) {//need to search through the array and parse it correctly
         //we should only ever encounter 1 set of parentheses
+        if(line[i]==0x0D) {
+            break;
+        }//when a \ is detected, start of \r and \n, end line
         if (line[i] == 0x28 || line[i] == 0x29) {//when we encounter a parentheses, 28=(   29=)
             space = 0;//reset # of consecutive spaces
             if (line[i] == 0x28) {//if we encounter a left parentheses
@@ -117,7 +123,7 @@ char *progScanner(char line[]) {
             }//end check for mismatched parentheses
         }//end if statement for parentheses
 
-        if (line[i] == 0x20 || line[i] == 0x2C) {//when it detects a space or comma
+        else if (line[i] == 0x20 || line[i] == 0x2C) {//when it detects a space or comma
             if (line[i] == 0x20) { space++; }//if space, increment # of consecutive spaces
             if (oc == 0) {//if first character is a space
                 if (line[i] == 0x2C) {//if first character is a comma, error, quit program
@@ -133,17 +139,18 @@ char *progScanner(char line[]) {
             }//if not consecutive spaces, place the space in output
             space++;//increment number of spaces
         }
-        if ((i - 1 - space) > 1) {//when checking for   , ,  need i to be greater than 2
+            /*
+        else if ((i - 1 - space) > 1) {//when checking for   , ,  need i to be greater than 2
             if ((line[i] == 0x2C) & (line[i - space] == 0x20) & (line[i - 1 - space] == 0x2C)) {
                 printf("Syntax error detected: ', ,' %d: %s:", linecount, line);
                 fprintf(output, "Syntax error detected: ', ,' %d: %s:", linecount, line);
                 exit(0);//since, error, exit the program
             }
         }//end the if statement looking for , ,
-
-            //else if(line[i]==0x2C) {}//when we detect a comma, do nothing
+        */
         else {//when we read anything but a comma, space, or parentheses
-            out[oc] = line[i];
+            temp = tolower(line[i]);
+            out[oc] = temp;
             oc++;
             paren = 0;//reset # of parentheses
             space = 0;//reset # of consecutive spaces
@@ -167,90 +174,100 @@ char *progScanner(char line[]) {
 }
 
 char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
-    char* ret="";//return string
-    char* substr="";//first char after $
-    strncpy(substr, reg + 1, 1);
-    char* substr2="";//second char after $
+    char ret[2];//return string
+    char substr=reg[1];//first char after $
+    char *subP=&substr;
+    char *subP2;
+
+    //strncpy(substr, reg + 1, 1);
+    char substr2;//second char after $
     int regNum=0;
     bool isCharReg=false;//register starts off with a letter
-    if ((!strcmp(substr,"Z")) || (!strcmp(substr,"a")) || (!strcmp(substr,"v")) || (!strcmp(substr,"t")) || (!strcmp(substr,"s")) || (!strcmp(substr,"k")) || (!strcmp(substr,"g")) || (!strcmp(substr,"f")) || (!strcmp(substr,"r"))){
+    //if ((!strcmp(substr,"Z")) || (!strcmp(substr,"a")) || (!strcmp(substr,"v")) || (!strcmp(substr,"t")) || (!strcmp(substr,"s")) || (!strcmp(substr,"k")) || (!strcmp(substr,"g")) || (!strcmp(substr,"f")) || (!strcmp(substr,"r"))){
+    if ((substr == 'z') || (substr == 'a') || (substr == 'v') || (substr == 't') || (substr == 's') || (substr == 'k') || (substr == 'g') || (substr == 'f') || (substr == 'r')){
+    //if ((substr ==( 'z'||'a' ||'v'||'t'||'s'||'k'||'g'||'f'||'r'))){
         isCharReg=true;
-        strncpy(substr2, reg + 2, 1);
+        //strncpy(substr2, reg + 2, 1);
+        substr2=reg[2];
+        subP2 = &reg[2];
     }
     if (!isCharReg) {//if it already is in number form, return it as is
-        strncpy(ret, reg + 1, strlen(reg) - 1);
+        //strncpy(ret, reg + 1, strlen(reg) - 1);
+        ret[0]=reg[1];
+        if(isdigit(reg[2])){ret[1]=reg[2];}
+        else ret[1]=NULL;
         return ret;
     }
     else{//otherwise, we must take the number equivalent of the register
-        if((!strcmp(substr,"Z")))
+        if((!strcmp(subP,"z")))
             return "0";
-        else if((!strcmp(substr,"a"))){
-            if((!strcmp(substr2,"0")))
+        else if((!strcmp(subP,"a"))){
+            if((!strcmp(subP2,"0")))
                 return "4";
-            else if((!strcmp(substr2,"3")))
+            else if((!strcmp(subP2,"3")))
                 return "7";
-            else if((!strcmp(substr2,"1")))
+            else if((!strcmp(subP2,"1")))
                 return "5";
-            else if((!strcmp(substr2,"2")))
+            else if((!strcmp(subP2,"2")))
                 return "6";
             else
                 return "1";
         }
-        else if((!strcmp(substr,"v"))){
-            if((!strcmp(substr2,"0")))
+        else if((!strcmp(subP,"v"))){
+            if((!strcmp(subP2,"0")))
                 return "2";
             else
                 return "3";
         }
-        else if((!strcmp(substr,"t"))){
-            if((!strcmp(substr2,"0")))
+        else if((!strcmp(subP,"t"))){
+            if((!strcmp(subP2,"0")))
                 return "8";
-            else if((!strcmp(substr2,"7")))
+            else if((!strcmp(subP2,"7")))
                 return "15";
-            else if((!strcmp(substr2,"1")))
+            else if((!strcmp(subP2,"1")))
                 return "9";
-            else if((!strcmp(substr2,"2")))
+            else if((!strcmp(subP2,"2")))
                 return "10";
-            else if((!strcmp(substr2,"3")))
+            else if((!strcmp(subP2,"3")))
                 return "11";
-            else if((!strcmp(substr2,"4")))
+            else if((!strcmp(subP2,"4")))
                 return "12";
-            else if((!strcmp(substr2,"5")))
+            else if((!strcmp(subP2,"5")))
                 return "13";
             else
                 return "14";
         }
-        else if((!strcmp(substr,"s"))){
-            if((!strcmp(substr2,"0")))
+        else if((!strcmp(subP,"s"))){
+            if((!strcmp(subP2,"0")))
                 return "16";
-            else if((!strcmp(substr2,"7")))
+            else if((!strcmp(subP2,"7")))
                 return "23";
-            else if((!strcmp(substr2,"1")))
+            else if((!strcmp(subP2,"1")))
                 return "17";
-            else if((!strcmp(substr2,"2")))
+            else if((!strcmp(subP2,"2")))
                 return "18";
-            else if((!strcmp(substr2,"3")))
+            else if((!strcmp(subP2,"3")))
                 return "19";
-            else if((!strcmp(substr2,"4")))
+            else if((!strcmp(subP2,"4")))
                 return "20";
-            else if((!strcmp(substr2,"5")))
+            else if((!strcmp(subP2,"5")))
                 return "21";
-            else if((!strcmp(substr2,"6")))
+            else if((!strcmp(subP2,"6")))
                 return "22";
             else
                 return "29";//sp
         }
-        else if((!strcmp(substr,"k"))){
-            if((!strcmp(substr2,"0")))
+        else if((!strcmp(subP,"k"))){
+            if((!strcmp(subP2,"0")))
                 return "26";//k0
             else
                 return "27";//k1
         }
-        else if((!strcmp(substr,"g")))
+        else if((!strcmp(subP,"g")))
             return "28";//gp
-        else if((!strcmp(substr,"f")))
+        else if((!strcmp(subP,"f")))
             return "30";//fp
-        else if((!strcmp(substr,"r")))
+        else if((!strcmp(subP,"r")))
             return "31";//ra
         else
             return "*";//if we get *s then we know something isnt right
@@ -258,25 +275,36 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
 }
 
 char *regNumberConverter(char* input) {
+    int i;
+    char ret[20];
+    char *spa = " ";
+    char *substr[1];
+    char copierC[100];
+    strcpy(copierC, input);
     char *token[6];
-    char *ret = "";
-    char *substr;
-    token[0] = strtok(input, " ");
-    int i = 0;
-    while (token[i] != NULL) {//fills token array with the words in the line
+    for(i=0;i<6;i++)  token[i]="";
+    for(i=0;i<20;i++) ret[i]=NULL;
+    token[0] = strtok(copierC, " ");
+    i=1;
+    while (token[i-1] != NULL && i <6) {//fills token array with the words in the line
         token[i++] = strtok(NULL, " ");
-    }
-    for (int j = 0; j < i; j++) {
-        strncpy(substr, token[i], 1);//stores the first char of the token in substr
-        if (!strcmp(substr, "$")) {
-            strcat(" ", ret);
-            strcat(getRegNum(token[i]), ret);
+        }
+    int j;
+    char *tokenString;
+    for (j = 0; j < i-1; j++) {
+        tokenString = token[j];
+        //memcpy(substr, tokenString,1);//stores the first char of the token in substr
+        if (tokenString[0]==0x24) {
+            strcat(ret,getRegNum(tokenString));
+            strcat(ret, spa);
         } else {
-            strcat(" ", ret);
-            strcat(token[i], ret);
+            strcat(ret, tokenString);
+            strcat(ret, spa);
+
         }
     }
-    return ret;
+    char *retu=&ret;
+    return retu;
 /* This function accepts as input the output of
 the progScanner() function and returns a pointer to a character string in which all
 register names are converted to numbers.
@@ -294,10 +322,14 @@ simulator halts*/
 }
 
 struct Inst parser(char* input){
+    int i;
+    char copierC[100];
+    strcpy(copierC, input);
     char* token[6];
-    token[0]=strtok(input," ");
-    int i=0;
-    while(token[i]!=NULL){//fills token array with the words in the line
+    for(i=0;i<6;i++)  token[i]="";
+    token[0]=strtok(copierC," ");
+    i=1;
+    while(token[i-1]!=NULL&&i<6){//fills token array with the words in the line
         token[i++]=strtok(NULL," ");
     }
     /*struct Inst {
@@ -309,7 +341,7 @@ struct Inst parser(char* input){
     };*/
     //IF LOGIC ERRORS,
     struct Inst retVal;
-    if (!strcmp(token[0], "haltSimulation")) {
+    if (!strcmp(token[0], "haltsimulation")) {
         retVal.opcode=haltSimulation;
         retVal.rs=0;
         retVal.rt=0;
@@ -394,6 +426,7 @@ void IF(struct IFLatchID *inLatch){
         struct Inst instruction=iM[pgm_c / 4];
         inLatch->inst=instruction;
         inLatch->done=true;
+        ifUtil++;
     }
     else inLatch->done=false;
     /*if (instruction.opcode== haltSimulation){
@@ -469,7 +502,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
             outLatch->immediate = 0;
             outLatch->cycles = 0;
     }*/
-    //if(inLatch->inst.opcode==nop)
+
     if(((registers[inLatch->inst.rt].flag) || (inLatch->inst.opcode==addi) || (inLatch->inst.opcode==lw) || (inLatch->inst.opcode==haltSimulation)) & (registers[inLatch->inst.rs].flag)){
         //if the flag value is true, the registers are good to go
         //this if runs if the flaggs are good, or it is an addi, halt, or lw
@@ -544,7 +577,7 @@ struct EXLatchM {//latch between Execute and Data Memory
     int cycles;
 };
      */
-   if(((inLatch->cycles%n==0)&(inLatch->opcode!=mul))||((inLatch->cycles==m)&(inLatch->opcode==mul))) {
+   if((((inLatch->cycles%n)==0)&&(inLatch->opcode!=mul))||(((inLatch->cycles%m)==0)&&(inLatch->opcode==mul))) {
        inLatch->done=true;//we have reached the needed # of cycles to complete the EX stage of datapath
        switch (inLatch->opcode) {
            case beq:
@@ -553,6 +586,7 @@ struct EXLatchM {//latch between Execute and Data Memory
                outLatch->regResult = inLatch->regResult;
                outLatch->result = registers[inLatch->reg1].value - registers[inLatch->reg2].value;
                outLatch->cycles = inLatch->cycles;
+               break;
 
            case add:
                outLatch->opcode = inLatch->opcode;
@@ -560,18 +594,21 @@ struct EXLatchM {//latch between Execute and Data Memory
                outLatch->regResult = inLatch->regResult;
                outLatch->result = registers[inLatch->reg1].value + registers[inLatch->reg2].value;
                outLatch->cycles = inLatch->cycles;
+               break;
            case sub:
                outLatch->opcode = inLatch->opcode;
                outLatch->reg2 = inLatch->reg2;
                outLatch->regResult = inLatch->regResult;
                outLatch->result = registers[inLatch->reg1].value - registers[inLatch->reg2].value;
                outLatch->cycles = inLatch->cycles;
+               break;
            case mul:
                outLatch->opcode = inLatch->opcode;
                outLatch->reg2 = inLatch->reg2;
                outLatch->regResult = inLatch->regResult;
                outLatch->result = registers[inLatch->reg1].value * registers[inLatch->reg2].value;
                outLatch->cycles = inLatch->cycles;
+               break;
            case addi:
                outLatch->opcode = inLatch->opcode;
                outLatch->reg2 = inLatch->reg2;
@@ -579,18 +616,21 @@ struct EXLatchM {//latch between Execute and Data Memory
                outLatch->result = registers[inLatch->reg1].value +
                                   inLatch->immediate;//adds the immediate to reg 1 and puts in result
                outLatch->cycles = inLatch->cycles;
+               break;
            case lw:
                outLatch->opcode = inLatch->opcode;
                outLatch->reg2 = inLatch->reg2;
                outLatch->regResult = inLatch->regResult + inLatch->immediate;
                outLatch->result = 0;//puts value from reg 1 into result
                outLatch->cycles = inLatch->cycles;
+               break;
            default:
                outLatch->opcode = inLatch->opcode;
                outLatch->reg2 = inLatch->reg2;
                outLatch->regResult = inLatch->regResult;
                outLatch->result = 0;
                outLatch->cycles = inLatch->cycles;
+               break;
        }
        return;
    }
@@ -615,24 +655,40 @@ struct MLatchWB {//Latch between memory and write back
 };
 
      */
-    if (((inLatch->opcode == (lw || sw)) & inLatch->cycles == c) || (inLatch->opcode != (lw || sw))) {
+    if (((inLatch->opcode == (lw || sw))&&inLatch->cycles == c) || (inLatch->opcode != (lw || sw))) {
         inLatch->done=true;
+        //regResult = rd register
         switch (inLatch->opcode) {
             case add:
+                outLatch->opcode = inLatch->opcode;
+                outLatch->regResult = inLatch->regResult;
+                outLatch->result = inLatch->result;
+                break;
             case sub:
+                outLatch->opcode = inLatch->opcode;
+                outLatch->regResult = inLatch->regResult;
+                outLatch->result = inLatch->result;
+                break;
             case mul:
+                outLatch->opcode = inLatch->opcode;
+                outLatch->regResult = inLatch->regResult;
+                outLatch->result = inLatch->result;
+                break;
             case addi:
                 outLatch->opcode = inLatch->opcode;
                 outLatch->regResult = inLatch->regResult;
                 outLatch->result = inLatch->result;
+                break;
             case lw:
                 outLatch->opcode = inLatch->opcode;
                 outLatch->regResult = inLatch->regResult;
                 outLatch->result = registers[inLatch->regResult].value;
+                break;
             default:
                 outLatch->opcode = inLatch->opcode;
                 outLatch->regResult = inLatch->regResult;
                 outLatch->result = inLatch->result;
+                break;
         }
         return;
     }
@@ -663,7 +719,6 @@ int main (int argc, char *argv[]) {
     int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
     int i;//for loop counter
     long mips_reg[REG_NUM];
-    long pgm_c = 0;//program counter, need assertion that PC < 512, max # of lines in IM
     long sim_cycle = 1;//simulation cycle counter
     //define your own counter for the usage of each pipeline stage here
 
@@ -709,8 +764,8 @@ int main (int argc, char *argv[]) {
             mips_reg[i] = 0;
         }
     }
-    //char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
-    char line[100];//array of chars that will hold the string input from file
+    char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
+    //char line[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
     while (fgets(line, 100, input)) {//keep getting lines from input file
         iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into I
@@ -771,6 +826,7 @@ int main (int argc, char *argv[]) {
     ////This will be main loop that executes program/////
     /////////////////////////////////////////////////////
     while(true){
+
         state4->cycles=sim_cycle;
         if(state4->done==false) WB(state4);//Do write back first, state4 is MLatchWB
         //if(state4->done==true) wbUtil=+1;//wb only ever takes 1 cycle
@@ -789,8 +845,10 @@ int main (int argc, char *argv[]) {
         else {//when there is no branch to take/ no beq detected
             //pgm_c=+4;//increment the PC normally
             state1->cycles=sim_cycle;
-            if(state1->done==false)ID(state1,stateT2);//then ID, state1 is IFLatchID, state 2 is IDLatchEX
-            idUtil=+state2->cycles;
+            if(state1->done==false){
+                ID(state1,stateT2);
+                idUtil=+state2->cycles;
+            }//then ID, state1 is IFLatchID, state 2 is IDLatchEX
 
             if(stateT2->opcode==beq){//if there is a branch detected in the ID stage, NOP until resolved
                 //state1->inst=*nop;
@@ -808,26 +866,35 @@ int main (int argc, char *argv[]) {
             }
         }//when branch not taken, or no branch at all, pgm_c is just incremeted by 4
         //if the EX stage says we have a branch that we need to take
-        if((stateT3->result==0)&(stateT3->opcode==beq)&(state2->done==true)&(state2->done==true)&(state2->done==true)){
+        if((stateT3->result==0)&&(stateT3->opcode==beq)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
 
         }
         //when all states done
-        else if((stateT1->done==true)&(state2->done==true)&(state3->done==true)&(state4->done==true)){
+        else if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
+            stateT1->done=false;
+            state2->done=false;
+            state3->done=false;
+            state4->done=false;
             state1=stateT1;
             state2=stateT2;
             state3=stateT3;
             state4=stateT4;//update the states to the temporary ones
+            pgm_c=+4;
 
-
+            if(sim_mode==1){
+                printf("cycle: %d register value: ",sim_cycle);
+                for (i=1;i<REG_NUM;i++){
+                    printf("%d  ",registers[i].value);
+                }
+                printf("program counter: %d\n",pgm_c);
+                printf("press ENTER to continue\n");
+                while(getchar() != '\n');
+            }
         }
-
-
-
-        sim_cycle+=1;//increment cycle count
         if(state4->opcode==haltSimulation)break;
+        sim_cycle+=1;//increment cycle count
     }
-
-
+    /*
     //output code 2: the following code will output the register
     //value to screen at every cycle and wait for the ENTER key
     //to be pressed; this will make it proceed to the next cycle
@@ -844,23 +911,40 @@ int main (int argc, char *argv[]) {
     test_counter++;
     printf("press ENTER to continue\n");
     while(getchar() != '\n');
-
+*/
     ////////////////////////////////////////////
     if(sim_mode==0){
+        ifUtil=ifUtil/sim_cycle;
+        idUtil=idUtil/sim_cycle;
+        exUtil=exUtil/sim_cycle;
+        memUtil=memUtil/sim_cycle;
+        wbUtil=wbUtil/sim_cycle;
         fprintf(output,"program name: %s\n",argv[5]);
         fprintf(output,"stage utilization: %f  %f  %f  %f  %f \n",
                 ifUtil, idUtil, exUtil, memUtil, wbUtil);
-        // add the (double) stage_counter/sim_cycle for each
-        // stage following sequence IF ID EX MEM WB
 
         fprintf(output,"register values ");
         for (i=1;i<REG_NUM;i++){
-            fprintf(output,"%ld  ",mips_reg[i]);
+            fprintf(output,"%ld  ",registers[i].value);
         }
         fprintf(output,"%ld\n",pgm_c);
 
+        //PRINT TO CONSOLE
+        printf("program name: %s\n",argv[5]);
+        printf("stage utilization: %f  %f  %f  %f  %f \n",
+                ifUtil, idUtil, exUtil, memUtil, wbUtil);
+
+        printf("register values ");
+        for (i=1;i<REG_NUM;i++){
+            printf("%ld  ",registers[i].value);
+        }
+        printf("%ld\n",pgm_c);
+
     }
     //close input and output files at the end of the simulation
+    printf("FINISHED SIMULTATION\n");
+    printf("press ENTER to continue\n");
+    while(getchar() != '\n');
     fclose(input);
     fclose(output);
     return 0;
