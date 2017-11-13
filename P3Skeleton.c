@@ -426,7 +426,7 @@ void IF(struct IFLatchID *inLatch){
         struct Inst instruction=iM[pgm_c / 4];
         inLatch->inst=instruction;
         inLatch->done=true;
-        ifUtil++;
+        ifUtil=+c;
     }
     else inLatch->done=false;
     /*if (instruction.opcode== haltSimulation){
@@ -502,7 +502,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
              outLatch->immediate = 0;
              outLatch->cycles = 0;
      }*/
-
+    idUtil++;
     if(((registers[inLatch->inst.rt].flag) || (inLatch->inst.opcode==addi) || (inLatch->inst.opcode==lw) || (inLatch->inst.opcode==haltSimulation)) & (registers[inLatch->inst.rs].flag)){
         //if the flag value is true, the registers are good to go
         //this if runs if the flaggs are good, or it is an addi, halt, or lw
@@ -579,6 +579,8 @@ struct EXLatchM {//latch between Execute and Data Memory
      */
     if((((inLatch->cycles%n)==0)&&(inLatch->opcode!=mul))||(((inLatch->cycles%m)==0)&&(inLatch->opcode==mul))) {
         inLatch->done=true;//we have reached the needed # of cycles to complete the EX stage of datapath
+        if(inLatch->opcode==mul)exUtil=+m;
+        if(inLatch->opcode!=mul)exUtil=+n;
         switch (inLatch->opcode) {
             case beq:
                 outLatch->opcode = inLatch->opcode;
@@ -656,6 +658,7 @@ struct MLatchWB {//Latch between memory and write back
 
      */
     if (((inLatch->opcode == (lw || sw))&&inLatch->cycles == c) || (inLatch->opcode != (lw || sw))) {
+        if(inLatch->opcode == (lw || sw)){memUtil=+c;}
         inLatch->done=true;
         //regResult = rd register
         switch (inLatch->opcode) {

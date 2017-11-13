@@ -13,9 +13,7 @@
 #define BATCH 0
 #define REG_NUM 32
 #define MEM_SIZE 2048
-#define WORDMAX 510
-
-
+#define WORDMAX 512
 ////////////////////////////
 /////ABOVE IS TA CODE///////
 /////BELOW IS OUR CODE//////
@@ -81,27 +79,25 @@ struct MLatchWB {//Latch between memory and write back
 //Array of registers
 struct Register registers[REG_NUM];
 //Instruction memory
-struct Inst iM[MEM_SIZE];
+struct Inst iM[WORDMAX];
 //Data memory
-int dM[MEM_SIZE];
+int dM[WORDMAX];
 double ifUtil, idUtil,exUtil,memUtil,wbUtil;
 
 int c, m, n;//made global so IF, ID, EX, MEM, and WB can access
 
 char *progScanner(char line[]) {
-    //printf("Got to progScanner");
     char temp;
     int i;//incrementer for loop below
     char out[100];//what is to be passed down to next function, output
     for(i=0;i<100;i++)  out[i]=' ';
     int oc = 0;//counter for out char array
     int space = 0; //for counting more than 1 consecutive space
-    int comma = 0; //for counting more than 1 consecutive comma
     int paren = 0;//count for # of parentheses
-
     for (i = 0; i < 100; i++) {//need to search through the array and parse it correctly
         //we should only ever encounter 1 set of parentheses
         if(line[i]==0x0D) {
+            out[oc]=NULL;
             break;
         }//when a \ is detected, start of \r and \n, end line
         if (line[i] == 0x28 || line[i] == 0x29) {//when we encounter a parentheses, 28=(   29=)
@@ -140,45 +136,26 @@ char *progScanner(char line[]) {
             }//if not consecutive spaces, place the space in output
             space++;//increment number of spaces
         }
-            /*
-        else if ((i - 1 - space) > 1) {//when checking for   , ,  need i to be greater than 2
-            if ((line[i] == 0x2C) & (line[i - space] == 0x20) & (line[i - 1 - space] == 0x2C)) {
-                printf("Syntax error detected: ', ,' %d: %s:", linecount, line);
-                fprintf(output, "Syntax error detected: ', ,' %d: %s:", linecount, line);
-                exit(0);//since, error, exit the program
-            }
-        }//end the if statement looking for , ,
-        */
         else {//when we read anything but a comma, space, or parentheses
             temp = tolower(line[i]);
             out[oc] = temp;
             oc++;
-            paren = 0;//reset # of parentheses
+            //paren = 0;//reset # of parentheses
             space = 0;//reset # of consecutive spaces
         }
 
     }
     char *outP = out;//transfers the character array out[] to a char pointer, outP
     return outP;
-    /*This reads as input a pointer to a string holding the next
-   line from the assembly language program, using the fgets() library function to do
-   so. progScanner() removes all duplicate spaces, parentheses, and commas from
-   it from it and a pointer to the resulting character string will be returned. Items
-   will be separated in this character string solely by a single space. For example
-   add $s0, $s1, $s2 will be transformed to add $s0 $s1 $s2. The instruction
-   lw $s0, 8($t0) will be converted to lw $s0 8 $t0. If, in a load or store instruction,
-   mismatched parentheses are detected (e.g., 8($t0( instead of 8($t0) or a missing
-   or extra ), ), this should be reported and the simulation should then stop.
-   In this simulator, we will assume that consecutive commas with nothing in between
-   (e.g., ,,) are a typo for a single comma, and not flag them as an error; such
-   consecutive commas will be treated as a single comma.*/
 }
 
 char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and returns the equivalent register number
     char ret[2];//return string
     char substr=reg[1];//first char after $
+
     char *subP=&substr;
     char *subP2;
+    char subC=reg[1];
 
     //strncpy(substr, reg + 1, 1);
     char substr2;//second char after $
@@ -186,9 +163,7 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
     bool isCharReg=false;//register starts off with a letter
     //if ((!strcmp(substr,"Z")) || (!strcmp(substr,"a")) || (!strcmp(substr,"v")) || (!strcmp(substr,"t")) || (!strcmp(substr,"s")) || (!strcmp(substr,"k")) || (!strcmp(substr,"g")) || (!strcmp(substr,"f")) || (!strcmp(substr,"r"))){
     if ((substr == 'z') || (substr == 'a') || (substr == 'v') || (substr == 't') || (substr == 's') || (substr == 'k') || (substr == 'g') || (substr == 'f') || (substr == 'r')){
-        //if ((substr ==( 'z'||'a' ||'v'||'t'||'s'||'k'||'g'||'f'||'r'))){
         isCharReg=true;
-        //strncpy(substr2, reg + 2, 1);
         substr2=reg[2];
         subP2 = &reg[2];
     }
@@ -235,8 +210,12 @@ char* getRegNum(char* reg){//takes in a register in hte form of "$xx" and return
                 return "12";
             else if((!strcmp(subP2,"5")))
                 return "13";
-            else
+            else if((!strcmp(subP2,"6")))
                 return "14";
+            else if((!strcmp(subP2,"8")))
+                return "24";
+            else if((!strcmp(subP2,"9")))
+                return "25";
         }
         else if((!strcmp(subP,"s"))){
             if((!strcmp(subP2,"0")))
@@ -296,7 +275,7 @@ char *regNumberConverter(char* input) {
         tokenString = token[j];
         //memcpy(substr, tokenString,1);//stores the first char of the token in substr
         if (tokenString[0]==0x24) {
-            strcat(ret,getRegNum(tokenString));
+            strcat(ret,getRegNum(token[j]));
             strcat(ret, spa);
         } else {
             strcat(ret, tokenString);
@@ -306,20 +285,6 @@ char *regNumberConverter(char* input) {
     }
     char *retu=&ret;
     return retu;
-/* This function accepts as input the output of
-the progScanner() function and returns a pointer to a character string in which all
-register names are converted to numbers.
-MIPS assembly allows you to specify either the name or the number of a register.
-For example, both $zero and $0 are the zero register; $t0 and $8 both refer to register
-8,and so on. Your parser should be able to handle either representation. (Use the
-table of registers in Hennessy and Patterson or look up the register numbers online.)
-The code scans down the string looking for the $ delimiter. Whatever is to the right
-of this (and to the left of a space or the end of string) is the label or number of the
-register. If the register is specified as a number (e.g., $5), then the $ is stripped and
-5 is left behind. If it is specified as a register name (e.g., $s0), the name is replaced
-by the equivalent register number). If an illegal register name is detected (e.g., $y5)
-or the register number is out of bounds (e.g., $987), an error is reported and the
-simulator halts*/
 }
 
 struct Inst parser(char* input){
@@ -333,13 +298,6 @@ struct Inst parser(char* input){
     while(token[i-1]!=NULL&&i<6){//fills token array with the words in the line
         token[i++]=strtok(NULL," ");
     }
-    /*struct Inst {
-        char* opcode;
-        int rs;
-        int rt;
-        int rd;
-        int immediate;
-    };*/
     //IF LOGIC ERRORS,
     struct Inst retVal;
     if (!strcmp(token[0], "haltsimulation")) {
@@ -406,20 +364,7 @@ struct Inst parser(char* input){
         printf("Error On Line Containing %s : The immediate value %d is to large", input, retVal.imm);
         exit(0);
     }
-    /*else if(){
-        printf("Error On Line Containing %s : The immediate value %d is to large", input, retval.imm);
-        exit(0);
-    }*/
     return retVal;
-    /* This function uses the output of regNumberConverter().
-The instruction is returned as an inst struct with fields for each of the fields of MIPS
-assembly instructions, namely opcode, rs, rt, rd, Imm. Of course, not all the fields
-will be present in all instructions; for example, beq will have just two register and
-one Imm fields.
-Each of the fields of the inst struct will be an integer. You should use
-the enumeration type to conveniently describe the opcodes, e.g., enum inst
-{ADD,ADDI,SUB,MULT,BEQ,LW,SW}. You can assume that the assembly language
-instr*/
 }
 
 void IF(struct IFLatchID *inLatch){
@@ -427,82 +372,12 @@ void IF(struct IFLatchID *inLatch){
         struct Inst instruction=iM[pgm_c / 4];
         inLatch->inst=instruction;
         inLatch->done=true;
-        ifUtil=+c;
+        ifUtil=ifUtil+c;
     }
     else inLatch->done=false;
-    /*if (instruction.opcode== haltSimulation){
-        inLatch->inst=instruction;
-        return 1;
-    }
-    if (inLatch->cycles == 0) {
-        inLatch->cycles = cycles;
-    }
-    inLatch->cycles--;
-    if (inLatch->cycles == 0){ //doesnt pass fetch untill cycles have dropped to 0
-        inLatch->inst = instruction;
-        return 0;
-    } else {
-        return 1;
-    }*/
 }
 
 void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
-    /*
-    struct Inst {
-    Opcode opcode;
-    int rs;
-    int rt;
-    int rd;
-    int imm;
-};
-     struct IFLatchID{ //latch between Instruction Fetch and Instruction Decode
-    struct Inst inst;
-	int cycles;
-};
-     struct IDLatchEX {//Latch between instruction decode and Execute
-        Opcode opcode;
-        int reg1; //reg value
-        int reg2; //reg value
-        int regResult;
-        int immediate;
-        int cycles;
-    };
-*/
-    /* switch (inLatch->inst.opcode) {
-         case add:
-         case sub:
-         case mul:
-         case addi:
-             outLatch->opcode = inLatch->inst.opcode;
-             outLatch->reg1 = inLatch->inst.rs;
-             outLatch->reg2 = inLatch->inst.rt;
-             outLatch->regResult = inLatch->inst.rd;
-             outLatch->immediate = inLatch->inst.imm;
-             outLatch->cycles = inLatch->cycles;
-
-         case lw:
-             outLatch->opcode = inLatch->inst.opcode;
-             outLatch->reg1 = inLatch->inst.rs;
-             outLatch->reg2 = inLatch->inst.rt;
-             outLatch->regResult = inLatch->inst.rs;
-             outLatch->immediate = inLatch->inst.imm;
-             outLatch->cycles = inLatch->cycles;
-         case beq:
-             outLatch->opcode = inLatch->inst.opcode;
-             outLatch->reg1 = inLatch->inst.rs;
-             outLatch->reg2 = inLatch->inst.rt;
-         case sw:
-             outLatch->opcode = inLatch->inst.opcode;
-             outLatch->reg1 = inLatch->inst.rs;
-             outLatch->reg2 = inLatch->inst.rt;
-         default:
-             outLatch->opcode = inLatch->inst.opcode;
-             outLatch->reg1 = 0;
-             outLatch->reg2 = 0;
-             outLatch->regResult = 0;
-             outLatch->immediate = 0;
-             outLatch->cycles = 0;
-     }*/
     idUtil++;
     //if(((registers[inLatch->inst.rt].flag) || (inLatch->inst.opcode==addi) || (inLatch->inst.opcode==lw) || (inLatch->inst.opcode==haltSimulation)) & (registers[inLatch->inst.rs].flag)){
     if(inLatch->inst.opcode==haltSimulation){
@@ -521,7 +396,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
             outLatch->reg2 = 0;
         }
         else {
-            registers[inLatch->inst.rt].value;
+            outLatch->reg2=registers[inLatch->inst.rt].value;
         }
         switch (inLatch->inst.opcode) {
             /*
@@ -536,7 +411,7 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->immediate = inLatch->inst.imm;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->regResult = inLatch->inst.rt;
-                registers[outLatch->regResult].flag=false;
+                if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
                 break;
             case lw:
                 outLatch->opcode = inLatch->inst.opcode;
@@ -559,19 +434,12 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->reg2   = inLatch->inst.rt;
                 outLatch->immediate = inLatch->inst.imm;
                 //Logan made some changes 11/12 1:52
-            case haltSimulation:
-                outLatch->opcode = haltSimulation;
-                outLatch->reg1 = 0;
-                outLatch->reg2 = 0;
-                outLatch->regResult = 0;
-                outLatch->immediate = 0;
-                //outLatch->cycles = 0;
             default:
                 outLatch->opcode = inLatch->inst.opcode;
                 outLatch->regResult = inLatch->inst.rd;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->reg2 = inLatch->inst.rt;
-                registers[outLatch->regResult].flag=false;
+                if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
                 break;
         }
     }
@@ -582,31 +450,14 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
         outLatch->regResult = 0;
         outLatch->immediate = 0;
         outLatch->cycles = 0;
-        stall=true;
+        //stall=true;
 
     }
     return;
 }
 
 void EX(struct IDLatchEX *inLatch,struct EXLatchM *outLatch){
-    /*
-     struct IDLatchEX {//Latch between instruction decode and Execute
-    Opcode opcode;
-    int reg1; //reg value
-    int reg2; //reg value
-    int regResult;
-    int immediate;
-    int cycles;
-};
-struct EXLatchM {//latch between Execute and Data Memory
-    Opcode opcode;
-    int reg2;
-    int regResult;
-    int result;
-    int cycles;
-};
-     */
-    if((inLatch->reg1==0)&&(inLatch->reg2==0)&&(inLatch->regResult==0)&&(inLatch->opcode==add)){//nop
+    if((inLatch->reg1==0)&&(inLatch->reg2==0)&&(inLatch->regResult==0)&&((inLatch->opcode==add)||(inLatch->opcode==nop))){//nop
         outLatch->opcode = nop;
         outLatch->reg2 = inLatch->reg2;
         outLatch->regResult = inLatch->regResult;
@@ -617,7 +468,7 @@ struct EXLatchM {//latch between Execute and Data Memory
     else if((((inLatch->cycles%n)==0)&&(inLatch->opcode!=mul))||(((inLatch->cycles%m)==0)&&(inLatch->opcode==mul))) {
         inLatch->done=true;//we have reached the needed # of cycles to complete the EX stage of datapath
         if(inLatch->opcode==mul)exUtil=+m;
-        if(inLatch->opcode!=mul)exUtil=+n;
+        else if(inLatch->opcode!=mul)exUtil=exUtil+n;
         switch (inLatch->opcode) {
             case beq:
                 outLatch->opcode = inLatch->opcode;
@@ -658,9 +509,16 @@ struct EXLatchM {//latch between Execute and Data Memory
                 break;
             case lw:
                 outLatch->opcode = inLatch->opcode;
-                outLatch->reg2 = inLatch->reg2;
-                outLatch->regResult = inLatch->regResult + inLatch->immediate;
-                outLatch->result = 0;//puts value from reg 1 into result
+                //outLatch->reg2 = inLatch->reg2;
+                outLatch->result = registers[inLatch->reg1].value + inLatch->immediate;
+                outLatch->regResult = inLatch->regResult;//puts value from reg 1 into result
+                outLatch->cycles = inLatch->cycles;
+                break;
+
+            case sw:
+                outLatch->opcode = inLatch->opcode;
+                outLatch->result = registers[inLatch->reg1].value + inLatch->immediate;
+                outLatch->regResult = inLatch->regResult;//puts value from reg 1 into result
                 outLatch->cycles = inLatch->cycles;
                 break;
             default:
@@ -677,23 +535,6 @@ struct EXLatchM {//latch between Execute and Data Memory
 }
 
 void MEM(struct EXLatchM *inLatch,struct MLatchWB *outLatch) {
-    /*
-    struct EXLatchM {//latch between Execute and Data Memory
-    Opcode opcode;
-    int reg2;
-    int regResult;
-    int result;
-
-    int cycles;
-};
-
-struct MLatchWB {//Latch between memory and write back
-    Opcode opcode;
-    int regResult;
-    int result;
-};
-
-     */
     if (((inLatch->opcode ==lw)&& inLatch->cycles == c) || (inLatch->opcode != lw)) {
         if(inLatch->opcode == lw){memUtil=+c;}
         else if(inLatch->opcode == sw){memUtil=+c;}
@@ -729,7 +570,7 @@ struct MLatchWB {//Latch between memory and write back
             case sw:
                 outLatch->opcode = inLatch->opcode;
                 outLatch->regResult = inLatch->regResult;
-                dM[inLatch->regResult]=inLatch->result;
+                dM[inLatch->result]=registers[inLatch->regResult].value;
                 break;
             default:
                 outLatch->opcode = inLatch->opcode;
@@ -762,30 +603,14 @@ void WB(struct MLatchWB *inLatch){
     inLatch->done=true;
     return;
 }
-/* These
-functions simulate activity in each of the five pipeline stages. All data, structural,
-and control hazards must be taken into account. Keep in mind that several operations
-are multicycle and that these stages are themselves not pipelined. For
-example, if an add takes 4 cycles, the next instruction cannot enter EX until these
-cycles have elapsed. This, in turn, can cause IF to be blocked by ID. Branches will
-be resolved in the EX stage. We will cover in the lectures some some issues related
-to realizing these functions.
-Keep in mind that the only requirement is that the simulator be cycle-by-cycle
-register-accurate. You don’t have to simulate the control signals. So, you can
-simply pass the instruction from one pipeline latch to the nxt.*/
-
-
 int main (int argc, char *argv[]) {
     stall=false;
     int sim_mode = 0;//mode flag, 1 for single-cycle, 0 for batch
     int i;//for loop counter
-    long mips_reg[REG_NUM];
+    //long mips_reg[REG_NUM];
     long sim_cycle = 1;//simulation cycle counter
     //define your own counter for the usage of each pipeline stage here
-
-    int test_counter = 0;
     printf("The arguments are:");
-
     for (i = 1; i < argc; i++) {
         printf("%s ", argv[i]);
     }
@@ -821,25 +646,20 @@ int main (int argc, char *argv[]) {
     }
 
     char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
-    //char line[100];//array of chars that will hold the string input from file
+    char tline[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
     while (fgets(line, 100, input)) {//keep getting lines from input file
-        iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into I
-        linecount++;//increment the linecounter for the IM
-    }//end the while statement that fills IM
+        //tline = line;
+        strcpy(tline, line);
+        if(tline[0]!=0x0D) {
+            iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into I
+            linecount++;//increment the linecounter for the IM
+        }
+        }//end the while statement that fills IM
 
     ///////////////////////////////////////////
     //Initializing the pipelined datapath, setting all stages to nops. add 0 0 0 is considered nop
     //since the nop command is not native to the MIPS ISA
-
-    /*
-    struct Inst *nop = malloc(sizeof(struct Inst));//defining a nop command
-    nop->opcode=add;
-    nop->rd=0;
-    nop->imm=0;
-    nop->rs=0;
-    nop->rt=0;
-*/
     struct IFLatchID *state1 = malloc(sizeof(struct IFLatchID));
     state1->inst.opcode=add;
     state1->inst.rd=0;
@@ -883,65 +703,85 @@ int main (int argc, char *argv[]) {
     /////////////////////////////////////////////////////
     while(true){
 
-        state4->cycles=sim_cycle;
+        state4->cycles++;
         if(state4->done==false) WB(state4);//Do write back first, state4 is MLatchWB
 
-        state3->cycles=sim_cycle;
+        state3->cycles++;
         if(state3->done==false) MEM(state3,stateT4);//then mem, state3 is EXLatchM, state4 is MLatchWB
 
-        state2->cycles=sim_cycle;
+        state2->cycles++;
         if(state2->done==false) EX(state2,stateT3);//then execute, state2 is IDLatchEX, state3 is EXLatchM
 
-        if((stateT3->result==0)&&(stateT3->opcode==beq)){//when there is a beq, and result is 0, then do the branch
-            //pgm_c=+(4+state2->immediate); //pc = pc + 4 + immediate
+        //When we need to branch
+        if((stateT3->result==0)&&(stateT3->opcode==beq)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
+            pgm_c = pgm_c +4+ 4*(state2->immediate);
+            //stall = false;//stop stalling
+            state1->cycles++;
+            ID(state1, stateT2);//decode the NOP
+
+            stateT1->cycles++;
+            IF(stateT1);//IF new pgm_C
         }
-        else {//when there is no branch to take/ no beq detected
+        else {//when there is no branch to take
             //pgm_c=+4;//increment the PC normally
-            state1->cycles=sim_cycle;
+            state1->cycles++;
             if(state1->done==false){
                 ID(state1,stateT2);
             }//then ID, state1 is IFLatchID, state 2 is IDLatchEX
 
             if(stateT2->opcode==beq){//if there is a branch detected in the ID stage, NOP until resolved
-                //state1->inst=*nop;
-                stateT1->inst.opcode=add;
-                stateT1->inst.rd=0;
-                stateT1->inst.rs=0;
-                stateT1->inst.rt=0;
-                stateT1->inst.imm=0;
-                stateT1->cycles=sim_cycle;
-                stateT1->done=true;
+                stall = true;
+                //sim_cycle++;
+                if((state2->done==true)&&(state3->done==true)&&(state4->done==true)){
+                    state2->done=false;
+                    state3->done=false;
+                    state4->done=false;
+                    state2->cycles=0;
+                    state3->cycles=0;
+                    state4->cycles=0;
+                    state2=stateT2;
+                    state3=stateT3;
+                    state4=stateT4;//update the states to the temporary ones
+                    state1->inst.opcode=nop;
+                    state1->inst.rd=0;
+                    state1->inst.rt=0;
+                    state1->inst.rs=0;
+                    state1->done=false;
+                    state1->inst.imm=0;
+
+                }
             }
-            else {
-                stateT1->cycles=sim_cycle;
+            else if(stall==false){
+                stateT1->cycles++;
                 if(stateT1->done==false)IF(stateT1);//finally IF
             }
         }//when branch not taken, or no branch at all, pgm_c is just incremeted by 4
-        //if the EX stage says we have a branch that we need to take
-        if((stateT3->result==0)&&(stateT3->opcode==beq)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
-
-        }
             //when all states done
-        else if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
+        if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
             stateT1->done=false;
             state2->done=false;
             state3->done=false;
             state4->done=false;
+            stateT1->cycles=0;
+            state2->cycles=0;
+            state3->cycles=0;
+            state4->cycles=0;
             state1=stateT1;
             state2=stateT2;
             state3=stateT3;
             state4=stateT4;//update the states to the temporary ones
-            pgm_c=+4;
+            if(stall==false) pgm_c= pgm_c+4;
+            stall=false;
 
-            if(sim_mode==1){
-                printf("cycle: %d register value: ",sim_cycle);
-                for (i=1;i<REG_NUM;i++){
-                    printf("%d  ",registers[i].value);
-                }
-                printf("program counter: %d\n",pgm_c);
-                printf("press ENTER to continue\n");
-                //while(getchar() != '\n');
+        }
+        if(sim_mode==1){
+            printf("cycle: %d register value: ",sim_cycle);
+            for (i=1;i<REG_NUM;i++){
+                printf("%d  ",registers[i].value);
             }
+            printf("program counter: %d\n",pgm_c);
+            printf("press ENTER to continue\n");
+            //while(getchar() != '\n');
         }
         if(state4->opcode==haltSimulation)break;
         sim_cycle+=1;//increment cycle count
