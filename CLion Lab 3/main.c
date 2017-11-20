@@ -649,7 +649,6 @@ int main (int argc, char *argv[]) {
     char tline[100];//array of chars that will hold the string input from file
     char *command;//pointer to char string with the final command with registers converted to numbers
     while (fgets(line, 100, input)) {//keep getting lines from input file
-        //tline = line;
         strcpy(tline, line);
         if(tline[0]!=0x0D) {
             iM[linecount] = parser(regNumberConverter(progScanner(line)));// store the completed instruction into I
@@ -781,7 +780,7 @@ int main (int argc, char *argv[]) {
             }
             printf("program counter: %d\n",pgm_c);
             printf("press ENTER to continue\n");
-            //while(getchar() != '\n');
+            while(getchar() != '\n');
         }
         if(state4->opcode==haltSimulation)break;
         sim_cycle+=1;//increment cycle count
