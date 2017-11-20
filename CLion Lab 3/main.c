@@ -411,14 +411,14 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->immediate = inLatch->inst.imm;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->regResult = inLatch->inst.rt;
-                if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
+                registers[outLatch->regResult].flag=false;
                 break;
             case lw:
                 outLatch->opcode = inLatch->inst.opcode;
                 outLatch->immediate = inLatch->inst.imm;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->regResult = inLatch->inst.rt;
-                //registers[outLatch->regResult].flag=false;
+                registers[outLatch->regResult].flag=false;
                 break;
             case sw:
                 outLatch->opcode = inLatch->inst.opcode;
@@ -439,7 +439,8 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->regResult = inLatch->inst.rd;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->reg2 = inLatch->inst.rt;
-                if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
+                //if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
+                registers[outLatch->regResult].flag=false;
                 break;
         }
     }
@@ -647,7 +648,6 @@ int main (int argc, char *argv[]) {
 
     char *line = malloc(sizeof(char) * 100);//temp array for holding the raw input of the text file
     char tline[100];//array of chars that will hold the string input from file
-    char *command;//pointer to char string with the final command with registers converted to numbers
     while (fgets(line, 100, input)) {//keep getting lines from input file
         strcpy(tline, line);
         if(tline[0]!=0x0D) {
@@ -702,6 +702,8 @@ int main (int argc, char *argv[]) {
     /////////////////////////////////////////////////////
     while(true){
 
+        assert(pgm_c<MEM_SIZE);//program counter should never exceed the memory size
+
         state4->cycles++;
         if(state4->done==false) WB(state4);//Do write back first, state4 is MLatchWB
 
@@ -730,7 +732,6 @@ int main (int argc, char *argv[]) {
 
             if(stateT2->opcode==beq){//if there is a branch detected in the ID stage, NOP until resolved
                 stall = true;
-                //sim_cycle++;
                 if((state2->done==true)&&(state3->done==true)&&(state4->done==true)){
                     state2->done=false;
                     state3->done=false;
@@ -754,9 +755,11 @@ int main (int argc, char *argv[]) {
                 stateT1->cycles++;
                 if(stateT1->done==false)IF(stateT1);//finally IF
             }
+
+
         }//when branch not taken, or no branch at all, pgm_c is just incremeted by 4
             //when all states done
-        if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){
+        if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){//all stages done
             stateT1->done=false;
             state2->done=false;
             state3->done=false;
