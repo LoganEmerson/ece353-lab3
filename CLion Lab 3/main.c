@@ -411,14 +411,14 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->immediate = inLatch->inst.imm;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->regResult = inLatch->inst.rt;
-                registers[outLatch->regResult].flag=false;
+                //if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
                 break;
             case lw:
                 outLatch->opcode = inLatch->inst.opcode;
                 outLatch->immediate = inLatch->inst.imm;
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->regResult = inLatch->inst.rt;
-                registers[outLatch->regResult].flag=false;
+                //registers[outLatch->regResult].flag=false;
                 break;
             case sw:
                 outLatch->opcode = inLatch->inst.opcode;
@@ -440,9 +440,10 @@ void ID(struct IFLatchID *inLatch,struct IDLatchEX *outLatch){
                 outLatch->reg1 = inLatch->inst.rs;
                 outLatch->reg2 = inLatch->inst.rt;
                 //if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
-                registers[outLatch->regResult].flag=false;
+                //registers[outLatch->regResult].flag=false;
                 break;
         }
+        if(outLatch->regResult!=0) registers[outLatch->regResult].flag=false;
     }
     else{//NOP
         outLatch->opcode = add;
@@ -700,10 +701,12 @@ int main (int argc, char *argv[]) {
     /////////////////////////////////////////////////////
     ////This will be main loop that executes program/////
     /////////////////////////////////////////////////////
+    stall=false;
     while(true){
-
+        assert(registers[0].value==0);//zero register should always =0
+        registers[0].flag=true;
         assert(pgm_c<MEM_SIZE);//program counter should never exceed the memory size
-
+        //if(registers[state4->regResult].flag==false) stall = false;
         state4->cycles++;
         if(state4->done==false) WB(state4);//Do write back first, state4 is MLatchWB
 
@@ -724,13 +727,12 @@ int main (int argc, char *argv[]) {
             IF(stateT1);//IF new pgm_C
         }
         else {//when there is no branch to take
-            //pgm_c=+4;//increment the PC normally
             state1->cycles++;
             if(state1->done==false){
                 ID(state1,stateT2);
             }//then ID, state1 is IFLatchID, state 2 is IDLatchEX
 
-            if(stateT2->opcode==beq){//if there is a branch detected in the ID stage, NOP until resolved
+            if((stateT2->opcode==beq)){//if there is a branch detected in the ID stage, NOP until resolved
                 stall = true;
                 if((state2->done==true)&&(state3->done==true)&&(state4->done==true)){
                     state2->done=false;
@@ -746,7 +748,7 @@ int main (int argc, char *argv[]) {
                     state1->inst.rd=0;
                     state1->inst.rt=0;
                     state1->inst.rs=0;
-                    state1->done=false;
+                    state1->done=true;
                     state1->inst.imm=0;
 
                 }
@@ -759,6 +761,7 @@ int main (int argc, char *argv[]) {
 
         }//when branch not taken, or no branch at all, pgm_c is just incremeted by 4
             //when all states done
+
         if((stateT1->done==true)&&(state2->done==true)&&(state3->done==true)&&(state4->done==true)){//all stages done
             stateT1->done=false;
             state2->done=false;
@@ -772,9 +775,21 @@ int main (int argc, char *argv[]) {
             state2=stateT2;
             state3=stateT3;
             state4=stateT4;//update the states to the temporary ones
-            if(stall==false) pgm_c= pgm_c+4;
-            stall=false;
 
+            if(registers[state1->inst.rt].flag==false||registers[state1->inst.rs].flag==false) {//detecing RAW data haz
+                if((state1->inst.rt==state2->regResult)||(state1->inst.rd==state2->regResult)){
+                state1->inst.opcode=nop;
+                state1->inst.rd=0;
+                state1->inst.rt=0;
+                state1->inst.rs=0;
+                state1->done=true;
+                state1->inst.imm=0;
+                //make a nop and do not incremenet PC
+            }}
+            else {
+                if (stall == false) pgm_c = pgm_c + 4;
+                stall = false;
+            }
         }
         if(sim_mode==1){
             printf("cycle: %d register value: ",sim_cycle);
@@ -788,24 +803,7 @@ int main (int argc, char *argv[]) {
         if(state4->opcode==haltSimulation)break;
         sim_cycle+=1;//increment cycle count
     }
-    /*
-    //output code 2: the following code will output the register
-    //value to screen at every cycle and wait for the ENTER key
-    //to be pressed; this will make it proceed to the next cycle
 
-    if(sim_mode==1){
-        printf("cycle: %ld ",sim_cycle);
-        for (i=1;i<REG_NUM;i++){
-            printf("%ld  ",mips_reg[i]);
-        }
-    }
-    printf("%ld\n",pgm_c);
-    pgm_c+=4;
-    sim_cycle+=1;
-    test_counter++;
-    printf("press ENTER to continue\n");
-    while(getchar() != '\n');
-*/
     ////////////////////////////////////////////
     ifUtil=ifUtil/sim_cycle;
     idUtil=idUtil/sim_cycle;
